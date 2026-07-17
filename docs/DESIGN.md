@@ -106,11 +106,11 @@ export type Route = { name: 'title' } | { name: 'play' } | { name: 'otona' };
 
 読み上げは **3段構え** で解決する。画面は入口の `src/audio/voice.ts` だけを呼び、内部で次の順に落ちる。
 
-1. **① 同梱クリップ（tier1 / `src/audio/clips.ts`）** … 後工程で **VOICEVOX** により事前生成した音声を `assets/voice/` に同梱し、あれば最優先で再生（web は `HTMLAudioElement`、native は無音スタブ）。
+1. **① 同梱クリップ（tier1 / `src/audio/clips.ts`）** … **VOICEVOX**（ずんだもん・あまあま）で事前生成した音声（`assets/voice/*.m4a`）を同梱し、あれば最優先で再生（web は `HTMLAudioElement`、native は無音スタブ）。クレジット: **VOICEVOX:ずんだもん**。
 2. **② speechSynthesis（tier2 / `src/audio/speech.ts`）** … ブラウザ内蔵 `window.speechSynthesis`（Web Speech API）で日本語（`ja-JP`）を合成（下記）。
 3. **③ 無音（tier3）** … ①②どちらも無ければ何もしない。**ひらがな表示だけでゲームは完全に成立** する。
 
-**クリップの対応付け**: 辞書エントリ・定型フレーズ・出題文それぞれに「クリップ基名」を対応付けられる（`voice.ts` の `wordVoice`／`PHRASE_VOICE`／`askVoice`）。基名の規約は 単語＝単語 `id`（`banana` 等）、定型句＝`p_seikai` 等、出題文＝`ask_<単語id>`。同梱表は `src/audio/voiceClips.ts` の `CLIP_URLS`（`require()` で登録）。**MVP では未同梱（`CLIP_URLS` は空）＝常に②③へフォールバック**。クリップを同梱すれば呼び出し側の変更なしに tier1 が効く。詳細と手順は `assets/voice/README.md`。
+**クリップの対応付け**: 辞書エントリ・定型フレーズ・出題文それぞれに「クリップ基名」を対応付けられる（`voice.ts` の `wordVoice`／`PHRASE_VOICE`／`askVoice`）。基名の規約は 単語＝単語 `id`（`banana` 等）、定型句＝`p_seikai` 等、出題文＝`ask_<単語id>`。同梱表は `src/audio/voiceClips.ts` の `CLIP_URLS`（`require()` で登録）。**VOICEVOX 生成の m4a を81個同梱済み**（単語40＋出題文40＋定型句1）。登録済み基名は呼び出し側の変更なしに tier1 が効き、未登録・未対応環境は②③へフォールバックする。生成の再現情報は `assets/voice/README.md`。
 
 ### tier2（speechSynthesis）の詳細
 

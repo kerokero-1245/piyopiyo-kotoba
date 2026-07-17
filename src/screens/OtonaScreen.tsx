@@ -154,6 +154,9 @@ export default function OtonaScreen({ onBack }: Props) {
           </View>
           <Text style={styles.note}>あつめた ほし は へりません。ここでだけ 0に もどせます。</Text>
         </View>
+
+        {/* 音声クレジット（VOICEVOX 利用規約）。同梱の読み上げクリップの出所を小さく明記する。 */}
+        <Text style={styles.credit}>よみあげのこえ: VOICEVOX:ずんだもん</Text>
       </ScrollView>
 
       {/* 「もどる」はスクロールの外に固定し、背の低い画面でも常に押せるようにする（DESIGN §8）。 */}
@@ -281,6 +284,12 @@ const styles = StyleSheet.create({
     color: colors.subtext,
     marginTop: space.md,
     lineHeight: 24,
+  },
+  credit: {
+    fontSize: font.small,
+    color: colors.subtext,
+    textAlign: 'center',
+    marginTop: space.lg,
   },
   starTotal: {
     fontSize: font.huge,
