@@ -75,12 +75,14 @@ src/
     quiz.ts                 出題生成（generateQuestion / generateSet / 選択肢生成）
   audio/
     sounds.ts               効果音（web は Web Audio 合成、native は無音スタブ）
-    speech.ts               読み上げ（web は speechSynthesis、native は無音スタブ）
+    voice.ts                読み上げの入口。3段構え（①同梱クリップ→②speechSynthesis→③無音）
+    clips.ts                tier1: 同梱音声クリップ再生（web は Audio 要素、native 無音スタブ）
+    voiceClips.ts           同梱クリップの登録表（CLIP_URLS）。現状は空＝フォールバックで動く
+    speech.ts               tier2: speechSynthesis（web、native は無音スタブ）
   components/
     BigButton.tsx           共通の大ボタン
     Belt.tsx                ベルトコンベア（無限スクロール＋タップ＋ぷるぷる）
     RevealCard.tsx          正解の ぽんっと拡大＋「◯◯！」
-    SpeakerButton.tsx       出題バーの🔊ボタン
     Confetti.tsx            紙吹雪
     ClearOverlay.tsx        「きょうの がんばりカード」セット完了の祝福
     ProgressStar.tsx        進捗ドット（クリアで⭐に変わる）

@@ -100,12 +100,24 @@ export type Route = { name: 'title' } | { name: 'play' } | { name: 'otona' };
 
 ---
 
-## 4. TTS（読み上げ）方針
+## 4. 読み上げ（音声）方針
 
-**本作で初導入。** ブラウザ内蔵 `window.speechSynthesis`（Web Speech API）で日本語（`ja-JP`）の合成音声を鳴らす。実装は `src/audio/speech.ts` に隔離し、web 専用（native は無音スタブ）。
+### 3段構え（同梱クリップ → speechSynthesis → 無音）
 
-- **いつ鳴らすか**: ①出題バーが新しい語を表示した瞬間、②🔊ボタンのタップ、③正解時の「ばなな！」。いずれもおとなモードの読み上げ設定が **オン** のときだけ。
-- **iOS Safari 対策**: `speechSynthesis` は **最初のユーザー操作より前には発声できない**。そこでタイトルの「あそぶ」タップ時に **無音（volume=0）の短い発声で1回だけアンロック** する（`warmUpSpeech()`）。以降は出題時の自動読み上げ（タップ外）も鳴る。1ページロードにつき1回で足りる。
+読み上げは **3段構え** で解決する。画面は入口の `src/audio/voice.ts` だけを呼び、内部で次の順に落ちる。
+
+1. **① 同梱クリップ（tier1 / `src/audio/clips.ts`）** … 後工程で **VOICEVOX** により事前生成した音声を `assets/voice/` に同梱し、あれば最優先で再生（web は `HTMLAudioElement`、native は無音スタブ）。
+2. **② speechSynthesis（tier2 / `src/audio/speech.ts`）** … ブラウザ内蔵 `window.speechSynthesis`（Web Speech API）で日本語（`ja-JP`）を合成（下記）。
+3. **③ 無音（tier3）** … ①②どちらも無ければ何もしない。**ひらがな表示だけでゲームは完全に成立** する。
+
+**クリップの対応付け**: 辞書エントリ・定型フレーズ・出題文それぞれに「クリップ基名」を対応付けられる（`voice.ts` の `wordVoice`／`PHRASE_VOICE`／`askVoice`）。基名の規約は 単語＝単語 `id`（`banana` 等）、定型句＝`p_seikai` 等、出題文＝`ask_<単語id>`。同梱表は `src/audio/voiceClips.ts` の `CLIP_URLS`（`require()` で登録）。**MVP では未同梱（`CLIP_URLS` は空）＝常に②③へフォールバック**。クリップを同梱すれば呼び出し側の変更なしに tier1 が効く。詳細と手順は `assets/voice/README.md`。
+
+### tier2（speechSynthesis）の詳細
+
+実装は `src/audio/speech.ts` に隔離し、web 専用（native は無音スタブ）。
+
+- **いつ鳴らすか**: ①出題バーが新しい語を表示した瞬間、②🔊ボタンのタップ、③正解時の「ばなな！」。いずれもおとなモードの読み上げ設定が **オン** のときだけ（現状 UI は3場面とも「単語」を読む＝`sayWord`）。
+- **iOS Safari 対策**: 音（クリップ・`speechSynthesis` とも）は **最初のユーザー操作より前には鳴らせない**。そこでタイトルの「あそぶ」タップ時に **1回だけアンロック** する（`warmUpVoice()`＝クリップの muted 起動＋無音発声）。以降は出題時の自動再生（タップ外）も鳴る。1ページロードにつき1回で足りる。
 - **声の選択**: `getVoices()` から `lang` が `ja` で始まる音声を優先。読み上げ速度は少しゆっくり（`rate ≈ 0.9`）、`pitch` 標準。`getVoices()` が非同期な環境（Safari/Chrome）では `voiceschanged` を待って選び直す。
 - **フォールバック（TTS必須にしない）**: `speechSynthesis` が無い／声が無い／設定オフ でも、**ひらがなの出題表示だけでゲームは完全に成立** する。読み上げは「あると嬉しい」補助。
 - **外部送信ゼロ**: 合成は端末内。ネットワークを一切使わない。
