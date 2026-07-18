@@ -13,7 +13,7 @@ import { colors, font, radius, space } from '../theme';
 import { generateSet } from '../game/quiz';
 import { addStars, getCategories, getTtsOn } from '../settings';
 import { playSound } from '../audio/sounds';
-import { cancelVoice, sayWord } from '../audio/voice';
+import { cancelVoice, sayWord, sayWrongCheer } from '../audio/voice';
 import { WordItem } from '../types';
 import Belt from '../components/Belt';
 import RevealCard from '../components/RevealCard';
@@ -113,9 +113,11 @@ export default function PlayScreen({ onHome }: Props) {
         }, 1300);
       } else {
         // 不正解: 押した語だけ ぷるぷる → ベルトは流れ続ける → もう一度。罰なし。
+        // やさしい合図（音）＋「あれれ」「おしい」を交互に声かけ（否定語なし・読み上げオン時のみ）。
         setShakeWord(item.word);
         setShakeNonce((n) => n + 1);
         playSound('wrong');
+        if (ttsRef.current) sayWrongCheer({ enabled: true });
       }
     },
     [locked, celebrating, done, answer, goNext, later]

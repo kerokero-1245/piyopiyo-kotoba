@@ -34,10 +34,20 @@ export function askVoice(word: WordItem): VoiceSpec {
 }
 
 // 定型フレーズ。clip=同梱時の基名 / text=フォールバック読み上げ。
-export type PhraseKey = 'seikai';
+// title  … タイトル画面で「ぴよぴよことば」を読む（タップ起点）。
+// arere / oshii … 誤答タップのやさしい声かけ（否定語なし・責めない・WORLD 正典）。
+export type PhraseKey = 'seikai' | 'title' | 'arere' | 'oshii';
 export const PHRASE_VOICE: Record<PhraseKey, VoiceSpec> = {
   seikai: { clip: 'p_seikai', text: 'せいかい' },
+  title: { clip: 'p_title', text: 'ぴよぴよことば' },
+  arere: { clip: 'p_arere', text: 'あれれ' },
+  oshii: { clip: 'p_oshii', text: 'おしい' },
 };
+
+// 誤答タップの声かけを「あれれ」→「おしい」で交互に返すローテ（呼ぶたび1つ進む）。
+// どちらも やさしい相づち。否定語・失敗表示はしない（罰なし・DESIGN §5 / WORLD 正典）。
+const WRONG_CHEERS: PhraseKey[] = ['arere', 'oshii'];
+let wrongCheerIdx = 0;
 
 // ── 再生（3段構えの解決）─────────────────────────────────────────────
 // enabled=false（おとなモードで読み上げオフ）なら何もしない。
@@ -54,8 +64,16 @@ export function sayWord(word: WordItem, opts?: { enabled?: boolean }): void {
   playVoice(wordVoice(word), opts);
 }
 
-// 定型フレーズを読む（将来の「せいかい！」等の対応点）。
+// 定型フレーズを読む（タイトルの「ぴよぴよことば」・将来の「せいかい！」等の対応点）。
 export function sayPhrase(key: PhraseKey, opts?: { enabled?: boolean }): void {
+  playVoice(PHRASE_VOICE[key], opts);
+}
+
+// 誤答タップのやさしい声かけ。呼ぶたびに「あれれ」「おしい」を交互に読む。
+// enabled=false（読み上げオフ）なら何もしない（＝ 効果音だけ）。3段構えは playVoice にまかせる。
+export function sayWrongCheer(opts?: { enabled?: boolean }): void {
+  const key = WRONG_CHEERS[wrongCheerIdx % WRONG_CHEERS.length];
+  wrongCheerIdx += 1;
   playVoice(PHRASE_VOICE[key], opts);
 }
 

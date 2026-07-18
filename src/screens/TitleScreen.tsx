@@ -7,7 +7,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, font, space } from '../theme';
 import BigButton from '../components/BigButton';
 import { playSound } from '../audio/sounds';
-import { warmUpVoice } from '../audio/voice';
+import { sayPhrase, warmUpVoice } from '../audio/voice';
+import { getTtsOn } from '../settings';
 
 interface Props {
   onPlay: () => void;
@@ -33,10 +34,26 @@ export default function TitleScreen({ onPlay, onOtona }: Props) {
     }, HOLD_MS);
   };
 
+  // タイトルをタップすると「ぴよぴよことば」を読み上げる（ジェスチャ起点＝自動再生制限を守る）。
+  // 最初のタップでもあるので warmUpVoice() で読み上げをアンロックしてから読む。読み上げオフなら黙る。
+  const sayTitle = () => {
+    playSound('tap');
+    warmUpVoice();
+    sayPhrase('title', { enabled: getTtsOn() });
+  };
+
   return (
     <View style={styles.root}>
       <View style={styles.center}>
-        <Text style={styles.title}>ぴよぴよことば</Text>
+        <Pressable
+          onPress={sayTitle}
+          accessibilityRole="button"
+          accessibilityLabel="ぴよぴよことば（きく）"
+          hitSlop={12}
+          testID="title-say"
+        >
+          <Text style={styles.title}>ぴよぴよことば</Text>
+        </Pressable>
         <Text style={styles.subtitle}>きいて さがそう</Text>
 
         {/* 概念の絵: ことばと もの（やさい・くだもの・どうぶつ・のりもの） */}

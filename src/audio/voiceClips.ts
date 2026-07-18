@@ -99,6 +99,11 @@ export const CLIP_URLS: Record<string, string> = {
 
   // ── 定型句 ──
   p_seikai: require('../../assets/voice/p_seikai.m4a'),
+  // タイトル読み（t_kotoba「ぴよぴよことば」）。基名は PHRASE_VOICE.title に一致。
+  p_title: require('../../assets/voice/p_title.m4a'),
+  // 誤答タップのやさしい声かけ（否定語なし・WORLD 正典）。e_arere「あれれ？」/ e_oshii「おしい！」。
+  p_arere: require('../../assets/voice/p_arere.m4a'),
+  p_oshii: require('../../assets/voice/p_oshii.m4a'),
 };
 
 // 指定した基名のクリップが登録済みか。
