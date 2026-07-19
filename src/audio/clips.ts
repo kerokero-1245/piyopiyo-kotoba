@@ -18,6 +18,8 @@ interface AudioEl {
   pause(): void;
   currentTime: number;
   muted: boolean;
+  addEventListener?(type: string, cb: () => void): void;
+  removeEventListener?(type: string, cb: () => void): void;
 }
 type AudioCtor = new (src?: string) => AudioEl;
 
@@ -49,17 +51,45 @@ export function cancelClip(): void {
 }
 
 // name のクリップを再生する。鳴らせたら true、無理なら false（呼び出し側が tier2 へ）。
-export function playClip(name: string): boolean {
+// onDone は再生終了（ended）・エラー・再生不可のいずれかで1回だけ呼ぶ（BGM ダッキング解除に使う）。
+// 直前クリップを cancelClip() で止めた場合は 'ended' が出ないため、その onDone は呼ばれない
+// （呼び出し側 voice.ts が世代番号で追い越しを無視するので、鳴っている最後の声だけが復帰を予約する）。
+export function playClip(name: string, onDone?: () => void): boolean {
   const A = getAudioCtor();
   if (!A || !hasClip(name)) return false;
   try {
     cancelClip();
     const a = new A(CLIP_URLS[name]);
     current = a;
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      try {
+        a.removeEventListener?.('ended', finish);
+        a.removeEventListener?.('error', finish);
+      } catch {
+        // 無視
+      }
+      if (onDone) {
+        try {
+          onDone();
+        } catch {
+          // 無視（ダッキング解除に失敗しても遊びは壊さない）
+        }
+      }
+    };
+    try {
+      a.addEventListener?.('ended', finish);
+      a.addEventListener?.('error', finish);
+    } catch {
+      // addEventListener 非対応でも再生は試みる（onDone は下の play() 拒否か保険で解決）
+    }
     const p = a.play();
     // play() の Promise 拒否（ユーザー操作前など）は握りつぶす（遊びは壊さない）。
+    // 鳴らなかったときも onDone を呼んでダッキングを残さない。
     if (p && typeof (p as Promise<void>).catch === 'function') {
-      (p as Promise<void>).catch(() => {});
+      (p as Promise<void>).catch(() => finish());
     }
     return true;
   } catch {

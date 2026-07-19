@@ -14,6 +14,88 @@ import { WordItem } from '../types';
 import { isClipAvailable, playClip, warmUpClips, cancelClip } from './clips';
 import { CLIP_URLS } from './voiceClips';
 import { speak, warmUpSpeech, cancelSpeech, isSpeechAvailable } from './speech';
+import { duckBgm, unduckBgm } from './bgm/engine';
+
+// ── BGM ダッキング協調 ────────────────────────────────────────────────
+// ことばは発話頻度が高い（sayWord を出題ごと・タップごとに連発する）。声のたびに
+// duck→unduck を往復させると BGM 音量が小刻みに揺れて耳障りになる。そこで:
+//   ・ダッキングは「単段」（多重に沈めない。声が続く間は下げたまま／冪等）。
+//   ・最新の声だけが復帰を予約できる（追い越された古い声の遅延コールバックは無視）。
+//   ・最後の声が終わってから少し待って（RELEASE_HOLD_MS）からなめらかに戻す
+//     （連続発話のあいだの谷を埋め、フラップを防ぐ）。
+//   ・onend が来ない環境向けに保険タイマーで必ず戻す（ダッキングを残さない）。
+// duckBgm/unduckBgm 自体は engine 側で setTargetAtTime によりなめらか（沈み速い・戻りゆっくり）。
+// AudioContext 非対応・BGM無効でも duckBgm/unduckBgm は無害な no-op。
+const RELEASE_HOLD_MS = 220; // 最後の声が終わってから BGM を戻すまでの猶予
+const DUCK_SAFETY_MS = 8000; // onend 欠落時の保険（必ず戻す）
+
+let voiceSeq = 0; // playVoice ごとに増える世代番号（最新が「持ち主」）
+let ducked = false; // いま BGM を下げているか（単段・冪等）
+let releaseTimer: ReturnType<typeof setTimeout> | null = null;
+let safetyTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearReleaseTimer(): void {
+  if (releaseTimer != null) {
+    clearTimeout(releaseTimer);
+    releaseTimer = null;
+  }
+}
+function clearSafetyTimer(): void {
+  if (safetyTimer != null) {
+    clearTimeout(safetyTimer);
+    safetyTimer = null;
+  }
+}
+
+// 声の再生開始。BGM を（まだなら）1段だけ沈め、この声の世代番号を返す。
+function beginVoiceDuck(): number {
+  const seq = ++voiceSeq;
+  clearReleaseTimer(); // 保留中の復帰を取り消す（連続発話は下げたまま＝フラップ防止）
+  if (!ducked) {
+    ducked = true;
+    try {
+      duckBgm();
+    } catch {
+      // 無害
+    }
+  }
+  clearSafetyTimer();
+  safetyTimer = setTimeout(() => {
+    safetyTimer = null;
+    requestRelease(seq);
+  }, DUCK_SAFETY_MS);
+  return seq;
+}
+
+// 猶予をおいてから BGM を戻す（最新の声でなければ何もしない）。
+function requestRelease(seq: number): void {
+  if (seq !== voiceSeq) return; // すでに新しい声が来ている → 下げたまま
+  clearReleaseTimer();
+  releaseTimer = setTimeout(() => {
+    releaseTimer = null;
+    if (seq !== voiceSeq) return; // 猶予中に新しい声 → 下げたまま
+    if (ducked) {
+      ducked = false;
+      clearSafetyTimer();
+      try {
+        unduckBgm();
+      } catch {
+        // 無害
+      }
+    }
+  }, RELEASE_HOLD_MS);
+}
+
+// 声の再生終了（ended / onend / error / 再生不可）で呼ぶ。最新の声のみ復帰を予約できる。
+function endVoiceDuck(seq: number): void {
+  requestRelease(seq);
+}
+
+// 明示停止（画面を離れる等）。進行中の声を無効化し、猶予つきで BGM を戻す。
+function releaseVoiceDuckNow(): void {
+  voiceSeq += 1; // 進行中の全コールバックを無効化
+  requestRelease(voiceSeq);
+}
 
 // 読み上げ1回ぶんの指定。clip=同梱クリップの基名（無ければ undefined）/ text=フォールバック読み上げ文字列。
 export interface VoiceSpec {
@@ -53,10 +135,15 @@ let wrongCheerIdx = 0;
 // enabled=false（おとなモードで読み上げオフ）なら何もしない。
 export function playVoice(spec: VoiceSpec, opts?: { enabled?: boolean }): void {
   if (opts && opts.enabled === false) return;
-  // ① 同梱クリップ
-  if (isClipAvailable(spec.clip) && playClip(spec.clip as string)) return;
-  // ② speechSynthesis（無ければ speak が no-op ＝ ③ 無音）
-  speak(spec.text, { enabled: true });
+  // 声の再生に入る前に BGM をダッキング（声が終わったら done で戻す）。
+  const seq = beginVoiceDuck();
+  const done = () => endVoiceDuck(seq);
+  // ① 同梱クリップ（VOICEVOX）。鳴ったら done は 'ended'/'error'/再生不可 で呼ばれる。
+  if (isClipAvailable(spec.clip) && playClip(spec.clip as string, done)) return;
+  // ② speechSynthesis。鳴ったら done は onend/onerror で呼ばれる。
+  if (speak(spec.text, { enabled: true, onDone: done })) return;
+  // ③ 無音（クリップも TTS も無い）: 何も鳴らないのでダッキングを直ちに解除する。
+  done();
 }
 
 // 便利関数: 単語をそのまま読む（出題・🔊・正解の「◯◯！」で使う）。
@@ -83,10 +170,11 @@ export function warmUpVoice(): void {
   warmUpSpeech();
 }
 
-// 発声を止める（画面を離れるとき・次の発声の前）。両 tier を止める。
+// 発声を止める（画面を離れるとき・次の発声の前）。両 tier を止め、BGM のダッキングも戻す。
 export function cancelVoice(): void {
   cancelClip();
   cancelSpeech();
+  releaseVoiceDuckNow();
 }
 
 // 読み上げが1つでも使えるか（同梱クリップが1つでもある or TTS が使える）。

@@ -12,6 +12,7 @@ import { CategoryId } from './types';
 const STAR_KEY = 'kotoba.totalStars';
 const CATS_KEY = 'kotoba.cats';
 const TTS_KEY = 'kotoba.tts';
+const BGM_KEY = 'kotoba.bgm';
 
 export const ALL_CATEGORIES: CategoryId[] = ['yasai', 'kudamono', 'doubutsu', 'norimono'];
 
@@ -161,6 +162,38 @@ export function setTtsOn(on: boolean): void {
   if (store) {
     try {
       store.setItem(TTS_KEY, on ? 'on' : 'off');
+    } catch {
+      // 無視
+    }
+  }
+}
+
+// ── BGM（オルゴール風の背景曲）オン/オフ ─────────────────────────
+// 既定は 'on'（控えめ音量）。おとなモードのトグルから切り替える。壊れた値は既定へ。
+// 読み上げ（tts）とは独立した設定。声の再生中はエンジン側で自動ダッキングする。
+let bgmCache: boolean | null = null;
+
+export function getBgmOn(): boolean {
+  if (bgmCache !== null) return bgmCache;
+  const store = ls();
+  if (store) {
+    try {
+      const v = store.getItem(BGM_KEY);
+      if (v === 'off') return (bgmCache = false);
+      if (v === 'on') return (bgmCache = true);
+    } catch {
+      // 無視して既定へ
+    }
+  }
+  return (bgmCache = true);
+}
+
+export function setBgmOn(on: boolean): void {
+  bgmCache = on;
+  const store = ls();
+  if (store) {
+    try {
+      store.setItem(BGM_KEY, on ? 'on' : 'off');
     } catch {
       // 無視
     }

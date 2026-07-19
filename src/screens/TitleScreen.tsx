@@ -8,6 +8,7 @@ import { colors, font, space } from '../theme';
 import BigButton from '../components/BigButton';
 import { playSound } from '../audio/sounds';
 import { sayPhrase, warmUpVoice } from '../audio/voice';
+import { initKotobaBgm } from '../audio/bgm';
 import { getTtsOn } from '../settings';
 
 interface Props {
@@ -39,6 +40,7 @@ export default function TitleScreen({ onPlay, onOtona }: Props) {
   const sayTitle = () => {
     playSound('tap');
     warmUpVoice();
+    initKotobaBgm(); // 最初のタップ（ジェスチャ起点）で BGM を開始（設定 ON のとき）
     sayPhrase('title', { enabled: getTtsOn() });
   };
 
@@ -74,6 +76,7 @@ export default function TitleScreen({ onPlay, onOtona }: Props) {
             onPress={() => {
               playSound('tap');
               warmUpVoice(); // 最初のタップで読み上げ（クリップ＋TTS）をアンロック
+              initKotobaBgm(); // 同じジェスチャで BGM を開始（設定 ON のとき）
               onPlay();
             }}
           />

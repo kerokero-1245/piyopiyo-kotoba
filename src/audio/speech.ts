@@ -28,6 +28,8 @@ interface SSUtterance {
   pitch: number;
   volume: number;
   voice: SSVoice | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
 }
 type UtteranceCtor = new (text?: string) => SSUtterance;
 interface SS {
@@ -114,11 +116,13 @@ export function warmUpSpeech(): void {
 }
 
 // text を ja-JP で少しゆっくり読み上げる。enabled=false / 非対応 では何もしない。
-export function speak(text: string, opts?: { enabled?: boolean }): void {
-  if (opts && opts.enabled === false) return;
+// 実際に発声したら true（onDone は onend/onerror で1回だけ呼ぶ＝BGM ダッキング解除に使う）、
+// no-op なら false を返す（呼び出し側が tier3 として即ダッキング解除できる）。
+export function speak(text: string, opts?: { enabled?: boolean; onDone?: () => void }): boolean {
+  if (opts && opts.enabled === false) return false;
   const s = getSynth();
   const U = getUtteranceCtor();
-  if (!s || !U) return;
+  if (!s || !U) return false;
   wireVoices();
   try {
     s.cancel(); // 前の発声を止めて重ならないように
@@ -128,9 +132,27 @@ export function speak(text: string, opts?: { enabled?: boolean }): void {
     u.pitch = 1;
     u.volume = 1;
     if (jaVoice) u.voice = jaVoice;
+    const onDone = opts?.onDone;
+    if (onDone) {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        try {
+          onDone();
+        } catch {
+          // 無視
+        }
+      };
+      // 読み上げ終了・エラー・キャンセル（cancel は end/error として通知される）で復帰。
+      u.onend = finish;
+      u.onerror = finish;
+    }
     s.speak(u);
+    return true;
   } catch {
     // 読み上げできなくても遊びは壊さない
+    return false;
   }
 }
 

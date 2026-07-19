@@ -77,6 +77,13 @@ function tone(c: AudioContext, freq: number, dur: number, type: OscillatorType, 
   osc.stop(at + dur + 0.02);
 }
 
+// BGM エンジンへ注入する AudioContext getter（configureBgm({ getCtx }) で使う）。
+// 効果音と同じ 1つの AudioContext を BGM も共有し、コンテキストを増やさない
+// （ブラウザの同時 AudioContext 数の制限に配慮）。web 以外・非対応では null（BGM は無音no-op）。
+export function getSharedAudioContext(): AudioContext | null {
+  return getCtx();
+}
+
 export function playSound(name: SoundName): void {
   const c = getCtx();
   if (!c) return; // native / 非対応環境では無音（MVP許容）
