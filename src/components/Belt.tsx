@@ -9,7 +9,7 @@
 // - itemSize はベルトの実測サイズ（beltW/beltH）から算出し、可視領域を絶対にはみ出さない。
 
 import React, { useEffect, useMemo, useRef } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { colors, radius } from '../theme';
 import { WordItem } from '../types';
 
@@ -83,9 +83,12 @@ function BeltItem({
           { width: itemSize, height: itemSize, transform: [{ translateX }] },
         ]}
       >
-        <Text style={{ fontSize: Math.round(itemSize * 0.6), lineHeight: Math.round(itemSize * 0.78) }}>
-          {item.emoji}
-        </Text>
+        <Animated.Image
+          source={item.svg}
+          resizeMode="contain"
+          accessibilityLabel={item.word}
+          style={{ width: Math.round(itemSize * 0.84), height: Math.round(itemSize * 0.84) }}
+        />
       </Animated.View>
     </Pressable>
   );

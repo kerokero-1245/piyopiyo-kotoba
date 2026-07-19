@@ -27,6 +27,21 @@ interface Props {
 
 const SET_SIZE = 5;
 
+// 出題バーの文字サイズを、実測幅と文字数から自前で決める。
+// RN Web は adjustsFontSizeToFit が効かず、長い語（ぱいなっぷる・きゅうきゅうしゃ 等）が「…」で省略されるため、
+// 全角=1列・半角スペース=0.5列で幅を概算し、はみ出さない最大サイズにクランプする（省略を出さない）。
+function computeAskFontSize(text: string, availW: number): number {
+  const MAX = font.title; // 34（短い語はこの上限のまま）
+  const MIN = 17; // これ以上は小さくしない（読める大きさを確保）
+  if (availW <= 0) return MAX;
+  let cols = 0;
+  for (const ch of text) cols += ch === ' ' ? 0.5 : 1;
+  if (cols <= 0) return MAX;
+  // 太字(900)の字送りぶんの安全係数(1.02)＋左右の余白(0.94)を見込む。
+  const fit = (availW * 0.94) / (cols * 1.02);
+  return Math.max(MIN, Math.min(MAX, Math.floor(fit)));
+}
+
 export default function PlayScreen({ onHome }: Props) {
   // 設定はマウント時に固定（このセットの途中で変わらない）。
   const catsRef = useRef(getCategories());
@@ -39,6 +54,7 @@ export default function PlayScreen({ onHome }: Props) {
   const [starsEarned, setStarsEarned] = useState(0);
 
   const [measured, setMeasured] = useState({ w: 0, h: 0 });
+  const [askTextW, setAskTextW] = useState(0); // 出題バーの文字領域の実測幅（フォント自前縮小に使う）
   const [locked, setLocked] = useState(false); // 正解演出のあいだは押せない
   const [celebrating, setCelebrating] = useState(false); // リビール＋紙吹雪
   const [done, setDone] = useState(false);
@@ -143,9 +159,18 @@ export default function PlayScreen({ onHome }: Props) {
         <View style={styles.homeBtn} />
       </View>
 
-      {/* 出題バー: 「◯◯ は どれ？」＋🔊 */}
+      {/* 出題バー: 「◯◯ は どれ？」＋🔊（長い語は自前計算で縮小＝省略を出さない） */}
       <View style={styles.askBar}>
-        <Text style={styles.askText} numberOfLines={1} adjustsFontSizeToFit testID="ask-word">
+        <Text
+          style={[styles.askText, { fontSize: computeAskFontSize(`${answer.word} は どれ？`, askTextW) }]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          onLayout={(e) => {
+            const w = e.nativeEvent.layout.width;
+            setAskTextW((prev) => (Math.abs(prev - w) < 1 ? prev : w));
+          }}
+          testID="ask-word"
+        >
           {answer.word} は どれ？
         </Text>
         <Pressable onPress={speakAsk} hitSlop={10} style={styles.speaker} accessibilityLabel="もういちど きく" testID="speak-btn">

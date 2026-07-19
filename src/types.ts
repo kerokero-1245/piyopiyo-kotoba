@@ -5,10 +5,13 @@ export type CategoryId = 'yasai' | 'kudamono' | 'doubutsu' | 'norimono';
 
 // 辞書の1件。word はひらがな（読み上げにもこの文字列をそのまま使う）。
 // id は安定した半角英字キー。同梱音声クリップのファイル名（基名）にも使う（audio/voice.ts）。
+// svg はシールポップ画風の自作素材（assets/svg/<id>.svg を require したもの）。ベルト/正解演出で絵として表示する。
+// emoji はメタ情報・アクセシビリティ・素材差し替えの控えとして残す（quiz.ts の紛らわしいペア判定にも使う）。
 export interface WordItem {
-  id: string; // 'banana'（全語ユニーク。クリップ基名 = この id）
+  id: string; // 'banana'（全語ユニーク。クリップ基名・SVG基名 = この id）
   emoji: string; // 🍌
   word: string; // 'ばなな'（ひらがな・読み上げにもこの文字列を使う）
+  svg: import('react-native').ImageSourcePropType; // assets/svg/<id>.svg
   category: CategoryId;
 }
 

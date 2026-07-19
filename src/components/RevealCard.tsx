@@ -3,7 +3,7 @@
 // 大きく見せる。読み上げ・紙吹雪・⭐は PlayScreen 側で同時に鳴らす（ここは見た目だけ）。
 
 import React, { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, Image, StyleSheet, Text, View } from 'react-native';
 import { colors, font, radius, space } from '../theme';
 import { WordItem } from '../types';
 
@@ -22,7 +22,7 @@ export default function RevealCard({ item }: { item: WordItem }) {
     <View style={styles.root} pointerEvents="none" testID="reveal">
       <View style={styles.backdrop} />
       <Animated.View style={[styles.card, { opacity, transform: [{ scale }] }]}>
-        <Text style={styles.emoji}>{item.emoji}</Text>
+        <Image source={item.svg} resizeMode="contain" accessibilityLabel={item.word} style={styles.emoji} />
         <Text style={styles.word}>{item.word}！</Text>
       </Animated.View>
     </View>
@@ -63,9 +63,8 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   emoji: {
-    fontSize: 120,
-    lineHeight: 140,
-    textAlign: 'center',
+    width: 152,
+    height: 152,
   },
   word: {
     fontSize: font.huge,
