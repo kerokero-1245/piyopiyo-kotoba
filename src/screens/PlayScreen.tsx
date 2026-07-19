@@ -11,7 +11,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, font, radius, space } from '../theme';
 import { generateSet } from '../game/quiz';
-import { addStars, getCategories, getTtsOn } from '../settings';
+import { displayWord } from '../game/words';
+import { addStars, getCategories, getMoji, getTtsOn } from '../settings';
 import { playSound } from '../audio/sounds';
 import { cancelVoice, sayWord, sayWrongCheer } from '../audio/voice';
 import { WordItem } from '../types';
@@ -46,6 +47,8 @@ export default function PlayScreen({ onHome }: Props) {
   // 設定はマウント時に固定（このセットの途中で変わらない）。
   const catsRef = useRef(getCategories());
   const ttsRef = useRef(getTtsOn());
+  // もじ表示（ひらがな/カタカナ/まぜがき）もマウント時に固定。表示ラベルだけに使う（読み上げは word のまま）。
+  const mojiRef = useRef(getMoji());
 
   const [questions, setQuestions] = useState(() => generateSet(catsRef.current, SET_SIZE));
   const [index, setIndex] = useState(0);
@@ -76,6 +79,8 @@ export default function PlayScreen({ onHome }: Props) {
 
   const question = questions[index];
   const answer = question.answer;
+  // 出題バー・正解カードに出す「表示ラベル」（もじ設定で変換）。助詞や読み上げには効かせない。
+  const answerLabel = displayWord(answer, mojiRef.current);
 
   // 新しい問題を表示した瞬間に読み上げ（設定オンのときだけ）。
   useEffect(() => {
@@ -162,7 +167,7 @@ export default function PlayScreen({ onHome }: Props) {
       {/* 出題バー: 「◯◯ は どれ？」＋🔊（長い語は自前計算で縮小＝省略を出さない） */}
       <View style={styles.askBar}>
         <Text
-          style={[styles.askText, { fontSize: computeAskFontSize(`${answer.word} は どれ？`, askTextW) }]}
+          style={[styles.askText, { fontSize: computeAskFontSize(`${answerLabel} は どれ？`, askTextW) }]}
           numberOfLines={1}
           adjustsFontSizeToFit
           onLayout={(e) => {
@@ -171,7 +176,7 @@ export default function PlayScreen({ onHome }: Props) {
           }}
           testID="ask-word"
         >
-          {answer.word} は どれ？
+          {answerLabel} は どれ？
         </Text>
         <Pressable onPress={speakAsk} hitSlop={10} style={styles.speaker} accessibilityLabel="もういちど きく" testID="speak-btn">
           <Text style={styles.speakerGlyph}>🔊</Text>
@@ -196,7 +201,7 @@ export default function PlayScreen({ onHome }: Props) {
       </View>
 
       {celebrating ? <Confetti /> : null}
-      {celebrating ? <RevealCard item={answer} /> : null}
+      {celebrating ? <RevealCard item={answer} label={answerLabel} /> : null}
       {done ? <ClearOverlay starCount={SET_SIZE} onReplay={newGame} onHome={onHome} /> : null}
     </View>
   );

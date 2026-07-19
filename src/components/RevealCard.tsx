@@ -7,7 +7,10 @@ import { Animated, Image, StyleSheet, Text, View } from 'react-native';
 import { colors, font, radius, space } from '../theme';
 import { WordItem } from '../types';
 
-export default function RevealCard({ item }: { item: WordItem }) {
+// label = 表示用ラベル（もじ設定で ひらがな/カタカナ/まぜがき に変換済み）。
+// 省略時は word（ひらがな）を表示。読み上げ・SVG・同一性は item.word のままで、見た目だけを差し替える。
+export default function RevealCard({ item, label }: { item: WordItem; label?: string }) {
+  const shown = label ?? item.word;
   const scale = useRef(new Animated.Value(0.2)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
@@ -23,7 +26,7 @@ export default function RevealCard({ item }: { item: WordItem }) {
       <View style={styles.backdrop} />
       <Animated.View style={[styles.card, { opacity, transform: [{ scale }] }]}>
         <Image source={item.svg} resizeMode="contain" accessibilityLabel={item.word} style={styles.emoji} />
-        <Text style={styles.word}>{item.word}！</Text>
+        <Text style={styles.word}>{shown}！</Text>
       </Animated.View>
     </View>
   );

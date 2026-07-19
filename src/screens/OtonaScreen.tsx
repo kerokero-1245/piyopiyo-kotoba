@@ -13,14 +13,23 @@ import {
   ALL_CATEGORIES,
   getBgmOn,
   getCategories,
+  getMoji,
   getTotalStars,
   getTtsOn,
   resetStars,
+  setMoji,
   setTtsOn,
   toggleCategory,
 } from '../settings';
 import { CATEGORY_LABELS } from '../game/words';
-import { CategoryId } from '../types';
+import { CategoryId, MojiMode } from '../types';
+
+// もじ 3択トグルの並び（ラベルは各モードの文字体系で自己説明的にする）。
+const MOJI_OPTIONS: { id: MojiMode; label: string }[] = [
+  { id: 'hiragana', label: 'ひらがな' },
+  { id: 'katakana', label: 'カタカナ' },
+  { id: 'mazegaki', label: 'まぜがき' },
+];
 import { playSound } from '../audio/sounds';
 import { setKotobaBgmOn } from '../audio/bgm';
 
@@ -30,6 +39,7 @@ interface Props {
 
 export default function OtonaScreen({ onBack }: Props) {
   const [cats, setCats] = useState<CategoryId[]>(getCategories());
+  const [moji, setMojiState] = useState<MojiMode>(getMoji());
   const [tts, setTts] = useState<boolean>(getTtsOn());
   const [bgm, setBgm] = useState<boolean>(getBgmOn());
   const [stars, setStars] = useState<number>(getTotalStars());
@@ -38,6 +48,13 @@ export default function OtonaScreen({ onBack }: Props) {
   const onToggleCat = (id: CategoryId) => {
     playSound('tap');
     setCats(toggleCategory(id));
+  };
+
+  // もじ表示の切替（ひらがな/カタカナ/まぜがき）。次のもんだいから反映（PlayScreen がマウント時に読む）。
+  const onSetMoji = (mode: MojiMode) => {
+    playSound('tap');
+    setMoji(mode); // 保存（kotoba.moji）
+    setMojiState(mode);
   };
 
   const onToggleTts = (on: boolean) => {
@@ -99,6 +116,35 @@ export default function OtonaScreen({ onBack }: Props) {
           </View>
           <Text style={styles.note}>
             オンにした なかまだけ でます。すくなくとも 1つは のこります。つぎのもんだいから かわります。
+          </Text>
+        </View>
+
+        {/* もじ ひらがな/カタカナ/まぜがき（表示ラベルだけ・読み上げ/絵/ベルトは不変） */}
+        <View style={[styles.card, styles.cardGap]}>
+          <Text style={styles.label}>もじ</Text>
+          <View style={styles.mojiOptions}>
+            {MOJI_OPTIONS.map((o) => {
+              const active = moji === o.id;
+              return (
+                <Pressable
+                  key={o.id}
+                  onPress={() => onSetMoji(o.id)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  style={[styles.mojiOption, active ? styles.optionActive : styles.optionIdle]}
+                  testID={`moji-${o.id}`}
+                >
+                  <Text style={[styles.mojiOptionText, active && styles.optionTextActive]} numberOfLines={1}>
+                    {o.label}
+                  </Text>
+                  {active ? <Text style={styles.mojiCheck}>✓</Text> : null}
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={styles.note}>
+            みために だけ かわります。よみあげの こえは そのまま。「まぜがき」は バナナ・パンダ など
+            いつも カタカナで かく ことばだけ カタカナに します。つぎのもんだいから かわります。
           </Text>
         </View>
 
@@ -283,6 +329,33 @@ const styles = StyleSheet.create({
   },
   catTextActive: {
     color: colors.white,
+  },
+  // もじは3択なので幅がきつい。列を詰め、各ボタンは縦積み（ラベル＋✓）で狭くても収める。
+  mojiOptions: {
+    flexDirection: 'row',
+    columnGap: space.sm,
+  },
+  mojiOption: {
+    flex: 1,
+    minHeight: 72,
+    borderRadius: radius.md,
+    borderWidth: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'column',
+    rowGap: space.xs,
+    paddingHorizontal: 4, // 4文字ラベルが最小幅（390px）でも収まるよう詰める
+  },
+  mojiOptionText: {
+    // 3択で幅がきついので font.body(20) より一段小さく。狭い画面でも4文字（ひらがな/カタカナ/まぜがき）を省略せず表示する。
+    fontSize: 18,
+    fontWeight: '900',
+    color: colors.text,
+  },
+  mojiCheck: {
+    fontSize: font.small,
+    color: colors.white,
+    fontWeight: '900',
   },
   options: {
     flexDirection: 'row',

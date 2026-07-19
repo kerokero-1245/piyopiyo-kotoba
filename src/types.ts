@@ -13,7 +13,17 @@ export interface WordItem {
   word: string; // 'ばなな'（ひらがな・読み上げにもこの文字列を使う）
   svg: import('react-native').ImageSourcePropType; // assets/svg/<id>.svg
   category: CategoryId;
+  // 「まぜがき」表示のときにカタカナで出すか（外来語・日常でカタカナ表記が普通の語だけ true）。
+  // 表示（出題バー・正解カードのラベル）だけに効く。読み上げ・SVG・出題ロジックは word（ひらがな）を使い続ける。
+  katakanaNatural: boolean;
 }
+
+// もじ表示モード（おとなモードで切替）。DESIGN §9 の localStorage キー kotoba.moji に保存。
+//   ・hiragana … 既定。すべてひらがな（今までどおり）。
+//   ・katakana … すべてカタカナ（機械変換）。
+//   ・mazegaki … 自然表記。katakanaNatural の語だけカタカナ、ほかはひらがな。
+// 変換は語ラベルのみに適用。助詞「は どれ？」や読み上げ・SVG・ベルト挙動には効かない。
+export type MojiMode = 'hiragana' | 'katakana' | 'mazegaki';
 
 // 1問。answer を含む K 個の選択肢（シャッフル済み）をベルトに流す。
 export interface Question {

@@ -7,12 +7,13 @@
 // 他アプリ・街のキー（meiro.* sansu.* land.*）は読み書き禁止。書いてよいのは kotoba.* のみ。
 
 import { Platform } from 'react-native';
-import { CategoryId } from './types';
+import { CategoryId, MojiMode } from './types';
 
 const STAR_KEY = 'kotoba.totalStars';
 const CATS_KEY = 'kotoba.cats';
 const TTS_KEY = 'kotoba.tts';
 const BGM_KEY = 'kotoba.bgm';
+const MOJI_KEY = 'kotoba.moji';
 
 export const ALL_CATEGORIES: CategoryId[] = ['yasai', 'kudamono', 'doubutsu', 'norimono'];
 
@@ -196,6 +197,42 @@ export function setBgmOn(on: boolean): void {
       store.setItem(BGM_KEY, on ? 'on' : 'off');
     } catch {
       // 無視
+    }
+  }
+}
+
+// ── もじ表示（ひらがな / カタカナ / まぜがき）─────────────────────────
+// 既定は 'hiragana'（今までどおり）。おとなモードの3択トグルから切り替える。壊れた値は既定へ。
+// 表示ラベルだけに効く設定（読み上げ・SVG・ベルト挙動・⭐は不変）。
+let mojiCache: MojiMode | null = null;
+
+function isMojiMode(v: unknown): v is MojiMode {
+  return v === 'hiragana' || v === 'katakana' || v === 'mazegaki';
+}
+
+export function getMoji(): MojiMode {
+  if (mojiCache !== null) return mojiCache;
+  const store = ls();
+  if (store) {
+    try {
+      const v = store.getItem(MOJI_KEY);
+      if (isMojiMode(v)) return (mojiCache = v);
+    } catch {
+      // 無視して既定へ
+    }
+  }
+  return (mojiCache = 'hiragana');
+}
+
+export function setMoji(mode: MojiMode): void {
+  const next = isMojiMode(mode) ? mode : 'hiragana';
+  mojiCache = next;
+  const store = ls();
+  if (store) {
+    try {
+      store.setItem(MOJI_KEY, next);
+    } catch {
+      // 保存できなくても遊びは壊さない
     }
   }
 }

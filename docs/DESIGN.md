@@ -77,21 +77,37 @@
 4. **有効カテゴリが1つだけ**の場合のみ、例外的に同カテゴリ内から誤答を選ぶ（この時だけ見た目が似る可能性がある＝§13 仮置き）。
 5. 選択肢をシャッフルしてベルトに載せる。**5問で1セット**（`generateSet(5)`）。前問と正解語が連続で被らない程度の軽い分散はするが、シード固定はしない（毎回ちがう）。
 
+### もじ表示（ひらがな / カタカナ / まぜがき）
+
+おとなモードの **「もじ」3択トグル**（既定 `hiragana`）で、**表示する文字だけ**を切り替える。**読み上げ・SVG・ベルト挙動・出題ロジック・⭐は一切変えない**（内部の同一性は常に `word`（ひらがな））。設定は `kotoba.moji` に保存し、次のもんだいから反映（PlayScreen がマウント時に読む）。
+
+- **hiragana** … 既定。今までどおり全てひらがな。
+- **katakana** … 全語カタカナ。ひらがな→カタカナは**機械変換**（`U+3041..U+3096` を `+0x60` して `U+30A1..U+30F6` へ。長音符「ー」等はそのまま）。データ追加は不要。
+- **mazegaki** … 自然表記。`katakanaNatural: true` の語だけカタカナ、ほかはひらがな。日常でカタカナ表記が普通の語（外来語・慣用カタカナ）だけをカタカナにする。**迷う語はひらがな側に倒す**。
+
+**変換は語ラベルだけ**に適用する。出題バー「◯◯ は どれ？」の助詞「は どれ？」は**ひらがなのまま**、正解カードの語ラベルにも同じ変換をかける。実装は `src/game/words.ts` の `toKatakana()` / `displayWord(item, mode)`（純関数）。
+
+現在の `katakanaNatural: true`（11語）= トマト・ピーマン・ブロッコリー・バナナ・メロン・パイナップル・ライオン・パンダ・バス・ヘリコプター・ロケット。残り29語はひらがな。出題バーの文字サイズは文字数ベース（`computeAskFontSize`）なのでカタカナでも省略は出ない。
+
 ### データモデル（`src/types.ts`）
 
 ```ts
 export type CategoryId = 'yasai' | 'kudamono' | 'doubutsu' | 'norimono';
 
 export interface WordItem {
-  emoji: string;      // 🍌
-  word: string;       // 'ばなな'（ひらがな・読み上げにもこの文字列を使う）
+  emoji: string;           // 🍌
+  word: string;            // 'ばなな'（ひらがな・読み上げにもこの文字列を使う。内部の同一性はこれ）
   category: CategoryId;
+  katakanaNatural: boolean; // 「まぜがき」表示でカタカナにする語か（外来語・日常でカタカナ表記が普通の語だけ true）
 }
 
 export interface Question {
   answer: WordItem;   // 正解
   choices: WordItem[]; // answer を含む K 個・シャッフル済み（ベルトに流す）
 }
+
+// もじ表示モード（おとなモードで切替・kotoba.moji に保存）。
+export type MojiMode = 'hiragana' | 'katakana' | 'mazegaki';
 
 export type Route = { name: 'title' } | { name: 'play' } | { name: 'otona' };
 ```
@@ -196,7 +212,9 @@ export type Route = { name: 'title' } | { name: 'play' } | { name: 'otona' };
 ```
 [おとなモード]   ※歯車を3秒長押しで入る（4歳が偶発しにくい操作）
   ・カテゴリ:  やさい🥕 / くだもの🍓 / どうぶつ🐰 / のりもの🚗  を1つずつオン/オフ（最低1つは残す）
+  ・もじ:      [ ひらがな ] / [ カタカナ ] / [ まぜがき ]（表示文字だけ・既定 ひらがな）
   ・よみあげ:  [ する ] / [ しない ]
+  ・BGM:       [ ながす ] / [ ながさない ]（オルゴール風・控えめ）
   ・あつめた ほし:  ⭐×N ＋ 「0に もどす」（2段階確認）
   ・もどる
 ```
@@ -224,7 +242,7 @@ export type Route = { name: 'title' } | { name: 'play' } | { name: 'otona' };
 | アニメーション | **React Native 標準 `Animated`** | ベルトの無限スクロール・リビールの ぽんっ・ぷるぷる・紙吹雪 |
 | 読み上げ | **Web Speech API（`speechSynthesis`）**（web）／無音スタブ（native） | 出題・🔊・正解の読み上げ（`ja-JP`） |
 | 効果音 | **Web Audio API 合成**（web）／無音スタブ（native） | タップ・正解・まちがいのやさしい音 |
-| 設定保存 | `localStorage`（web） | カテゴリのオン/オフ・読み上げ・累計⭐ |
+| 設定保存 | `localStorage`（web） | カテゴリのオン/オフ・もじ表示・読み上げ・BGM・累計⭐ |
 
 > **実装前に必ず** Expo SDK 57 公式ドキュメント（`https://docs.expo.dev/versions/v57.0.0/`）で導入手順・API を確認する（記憶で書かない）。アニメは reanimated を足さず**標準 Animated** に統一。TTS は expo 依存を増やさず **web 専用モジュール**（native 無音スタブ）で実装する。
 
@@ -232,7 +250,7 @@ export type Route = { name: 'title' } | { name: 'play' } | { name: 'otona' };
 
 - **音声・読み上げの自動再生制限** … ページ読み込み直後には鳴らせない。効果音も TTS も **タップ起点**。TTS は「あそぶ」タップで1回アンロックしてから、出題時の自動読み上げを許す（§4）。
 - **レイアウトが可視領域に必ず収まること（さんすうの教訓）** … ベルトを `flex:1`、実測から絵の大きさを算出。完了前に Playwright で **390×844 / 515×684 / 1280×800** を目視。背の低い画面で被りゼロを必須にする。
-- **端末内保存の永続性** … `localStorage` は消え得る。設定が消えても既定（全カテゴリ・読み上げオン・⭐0）で成立するので許容。
+- **端末内保存の永続性** … `localStorage` は消え得る。設定が消えても既定（全カテゴリ・もじ=ひらがな・読み上げオン・BGMオン・⭐0）で成立するので許容。
 - **画面向き** … 縦持ち前提（中央寄せ・最大幅制限）で横画面でも崩れない。
 
 ### localStorage キー（すべて `kotoba.` プレフィックス／WORLD §7 準拠）
@@ -241,7 +259,9 @@ export type Route = { name: 'title' } | { name: 'play' } | { name: 'otona' };
 |---|---|---|
 | `kotoba.totalStars` | 数値文字列 | 累計⭐。1問クリアで +1（再挑戦後も +1）。減らない。**街の燃料（やおやさん）に合流**。取得失敗は 0 扱い |
 | `kotoba.cats` | JSON（有効カテゴリidの配列） | おとなモードのカテゴリ オン/オフ。既定は全4カテゴリ有効。空にはできない（最低1つ残す） |
+| `kotoba.moji` | `'hiragana'` / `'katakana'` / `'mazegaki'` | もじ表示（表示文字だけ切替・読み上げ/絵/挙動は不変）。既定 `'hiragana'`。壊れた値は既定へ |
 | `kotoba.tts` | `'on'` / `'off'` | 読み上げ オン/オフ。既定 `'on'` |
+| `kotoba.bgm` | `'on'` / `'off'` | BGM（オルゴール風の背景曲）オン/オフ。既定 `'on'`。読み上げとは独立 |
 
 - 他アプリ・街のキー（`meiro.*` `sansu.*` `land.*`）は **読み書き禁止**。書いてよいのは `kotoba.*` のみ。
 - 読み取りは常に try/catch ＋既定フォールバック。壊れた値でも安全に既定でレンダリング。
