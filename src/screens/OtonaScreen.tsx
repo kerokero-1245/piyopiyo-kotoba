@@ -4,9 +4,12 @@
 //   ・あつめた ほし: ⭐×N ＋「0に もどす」（2段階確認）
 // 変更は次のもんだいから反映される（PlayScreen がマウント時に設定を読む）。
 // 項目が増えても背の低い画面で「もどる」が隠れないよう、内容は ScrollView に入れる（DESIGN §8）。
+// 選択肢の文字は枠の幅から大きさを決め、✓ は文字の横ではなく右上に重ねて、狭い画面でも1行に収める
+// （ぴよぴよさんすうと同じ直し方）。
+// 「0に もどす」は ことばの中の表示だけを 0 にする。街へ渡す累計 kotoba.totalStars は残す（settings.ts）。
 
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { colors, font, radius, space } from '../theme';
 import BigButton from '../components/BigButton';
 import {
@@ -14,9 +17,9 @@ import {
   getBgmOn,
   getCategories,
   getMoji,
-  getTotalStars,
+  getShownStars,
   getTtsOn,
-  resetStars,
+  resetShownStars,
   setMoji,
   setTtsOn,
   toggleCategory,
@@ -37,12 +40,39 @@ interface Props {
   onBack: () => void;
 }
 
+const CARD_PAD = space.md; // カードの内側の余白
+const OPTION_GAP = space.sm; // 選択肢どうしの間
+const OPTION_PAD = 4; // 選択肢の内側の左右の余白
+const OPTION_BORDER = 3;
+const CAT_EMOJI_W = 38; // カテゴリの絵文字（30px）の幅＋ゆとり
+
+// 選択肢の内側の幅（列数 n）。枠（最大幅 480・左右 space.md）→ カード（枠線1・余白 CARD_PAD）→
+// 選択肢（枠線3・余白 OPTION_PAD）の順に引く。
+function optionInnerW(windowW: number, n: number): number {
+  const frameW = Math.min(windowW, 480) - space.md * 2;
+  const cardInner = frameW - CARD_PAD * 2 - 2;
+  return (cardInner - OPTION_GAP * (n - 1)) / n - OPTION_BORDER * 2 - OPTION_PAD * 2;
+}
+
+// 2つ並びの選択肢（する/しない・ながす/ながさない）の文字の大きさ。最長の「ながさない」（5字）が1行に収まる大きさ。
+function optionFontSize(windowW: number): number {
+  return Math.min(font.big, Math.floor(optionInnerW(windowW, 2) / 5.2));
+}
+
+// カテゴリ（絵文字＋4字まで）の文字の大きさ。2つ並びの内側から絵文字と間（space.xs）を引いた幅に「くだもの」等の4字を収める。
+function catFontSize(windowW: number): number {
+  return Math.min(font.body, Math.floor((optionInnerW(windowW, 2) - CAT_EMOJI_W - space.xs) / 4.2));
+}
+
 export default function OtonaScreen({ onBack }: Props) {
+  const { width: windowW } = useWindowDimensions();
+  const optionFont = { fontSize: optionFontSize(windowW) };
+  const catFont = { fontSize: catFontSize(windowW) };
   const [cats, setCats] = useState<CategoryId[]>(getCategories());
   const [moji, setMojiState] = useState<MojiMode>(getMoji());
   const [tts, setTts] = useState<boolean>(getTtsOn());
   const [bgm, setBgm] = useState<boolean>(getBgmOn());
-  const [stars, setStars] = useState<number>(getTotalStars());
+  const [stars, setStars] = useState<number>(getShownStars());
   const [confirmReset, setConfirmReset] = useState(false); // 誤操作防止の2段階確認
 
   const onToggleCat = (id: CategoryId) => {
@@ -76,7 +106,7 @@ export default function OtonaScreen({ onBack }: Props) {
       setConfirmReset(true); // 1回目は確認へ
       return;
     }
-    resetStars();
+    resetShownStars(); // 表示だけ 0 に。街へ渡す累計（kotoba.totalStars）は残す
     setStars(0);
     setConfirmReset(false);
   };
@@ -108,7 +138,7 @@ export default function OtonaScreen({ onBack }: Props) {
                   style={[styles.cat, active ? styles.catActive : styles.catIdle, lastOne && styles.catLocked]}
                 >
                   <Text style={styles.catEmoji}>{meta.emoji}</Text>
-                  <Text style={[styles.catText, active && styles.catTextActive]}>{meta.label}</Text>
+                  <Text style={[styles.catText, catFont, active && styles.catTextActive]}>{meta.label}</Text>
                   {active ? <Text style={styles.check}>✓</Text> : null}
                 </Pressable>
               );
@@ -158,7 +188,7 @@ export default function OtonaScreen({ onBack }: Props) {
               accessibilityState={{ selected: tts }}
               style={[styles.option, tts ? styles.optionActive : styles.optionIdle]}
             >
-              <Text style={[styles.optionText, tts && styles.optionTextActive]}>する</Text>
+              <Text style={[styles.optionText, optionFont, tts && styles.optionTextActive]}>する</Text>
               {tts ? <Text style={styles.check}>✓</Text> : null}
             </Pressable>
             <Pressable
@@ -167,7 +197,7 @@ export default function OtonaScreen({ onBack }: Props) {
               accessibilityState={{ selected: !tts }}
               style={[styles.option, !tts ? styles.optionActive : styles.optionIdle]}
             >
-              <Text style={[styles.optionText, !tts && styles.optionTextActive]}>しない</Text>
+              <Text style={[styles.optionText, optionFont, !tts && styles.optionTextActive]}>しない</Text>
               {!tts ? <Text style={styles.check}>✓</Text> : null}
             </Pressable>
           </View>
@@ -187,7 +217,7 @@ export default function OtonaScreen({ onBack }: Props) {
               style={[styles.option, bgm ? styles.optionActive : styles.optionIdle]}
               testID="bgm-on"
             >
-              <Text style={[styles.optionText, bgm && styles.optionTextActive]}>ながす</Text>
+              <Text style={[styles.optionText, optionFont, bgm && styles.optionTextActive]}>ながす</Text>
               {bgm ? <Text style={styles.check}>✓</Text> : null}
             </Pressable>
             <Pressable
@@ -197,7 +227,7 @@ export default function OtonaScreen({ onBack }: Props) {
               style={[styles.option, !bgm ? styles.optionActive : styles.optionIdle]}
               testID="bgm-off"
             >
-              <Text style={[styles.optionText, !bgm && styles.optionTextActive]}>ながさない</Text>
+              <Text style={[styles.optionText, optionFont, !bgm && styles.optionTextActive]}>ながさない</Text>
               {!bgm ? <Text style={styles.check}>✓</Text> : null}
             </Pressable>
           </View>
@@ -218,7 +248,7 @@ export default function OtonaScreen({ onBack }: Props) {
                   setConfirmReset(false);
                 }}
                 accessibilityRole="button"
-                style={[styles.resetBtn, styles.resetCancel]}
+                style={[styles.resetBtn, styles.resetBtnGrow, styles.resetCancel]}
               >
                 <Text style={styles.resetCancelText}>やめる</Text>
               </Pressable>
@@ -229,7 +259,7 @@ export default function OtonaScreen({ onBack }: Props) {
               disabled={stars === 0 && !confirmReset}
               style={[
                 styles.resetBtn,
-                confirmReset ? styles.resetConfirm : styles.resetIdle,
+                confirmReset ? [styles.resetBtnGrow, styles.resetConfirm] : styles.resetIdle,
                 stars === 0 && !confirmReset ? styles.resetDisabled : null,
               ]}
             >
@@ -238,7 +268,9 @@ export default function OtonaScreen({ onBack }: Props) {
               </Text>
             </Pressable>
           </View>
-          <Text style={styles.note}>あつめた ほし は へりません。ここでだけ 0に もどせます。</Text>
+          <Text style={styles.note}>
+            あつめた ほし は へりません。ここでだけ 0に もどせます。0に しても、まち（ぴよぴよランド）の ⭐ は へりません。
+          </Text>
         </View>
 
         {/* 音声クレジット（VOICEVOX 利用規約）。同梱の読み上げクリップの出所を小さく明記する。 */}
@@ -276,7 +308,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,
-    padding: space.lg,
+    padding: CARD_PAD,
     borderWidth: 1,
     borderColor: colors.beltBorder,
   },
@@ -293,20 +325,20 @@ const styles = StyleSheet.create({
   catGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    columnGap: space.md,
-    rowGap: space.md,
+    columnGap: OPTION_GAP,
+    rowGap: OPTION_GAP,
   },
   cat: {
     width: '46%',
     flexGrow: 1,
     minHeight: 72,
     borderRadius: radius.md,
-    borderWidth: 3,
+    borderWidth: OPTION_BORDER,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     columnGap: space.xs,
-    paddingHorizontal: space.sm,
+    paddingHorizontal: OPTION_PAD,
   },
   catIdle: {
     backgroundColor: colors.surface,
@@ -323,7 +355,6 @@ const styles = StyleSheet.create({
     fontSize: 30,
   },
   catText: {
-    fontSize: font.body,
     fontWeight: '900',
     color: colors.text,
   },
@@ -359,17 +390,16 @@ const styles = StyleSheet.create({
   },
   options: {
     flexDirection: 'row',
-    columnGap: space.md,
+    columnGap: OPTION_GAP,
   },
   option: {
     flex: 1,
     minHeight: 72,
     borderRadius: radius.md,
-    borderWidth: 3,
+    borderWidth: OPTION_BORDER,
+    paddingHorizontal: OPTION_PAD,
     alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'row',
-    columnGap: space.sm,
   },
   optionIdle: {
     backgroundColor: colors.surface,
@@ -380,7 +410,6 @@ const styles = StyleSheet.create({
     borderColor: colors.playPressed,
   },
   optionText: {
-    fontSize: font.big,
     fontWeight: '900',
     color: colors.text,
   },
@@ -388,7 +417,11 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   check: {
-    fontSize: font.big,
+    // 選択中の印。文字の横に並べると狭い画面で文字が折り返すので、右上に重ねる。
+    position: 'absolute',
+    top: 2,
+    right: 8,
+    fontSize: font.small,
     color: colors.white,
     fontWeight: '900',
   },
@@ -410,9 +443,15 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   resetRow: {
+    // 確認中は「やめる」「ほんとうに 0に する」が横に入りきらない幅で2段に折り返す（はみ出さない）。
     flexDirection: 'row',
+    flexWrap: 'wrap',
     columnGap: space.sm,
+    rowGap: space.sm,
     marginTop: space.md,
+  },
+  resetBtnGrow: {
+    flexGrow: 1,
   },
   resetBtn: {
     minHeight: 52,

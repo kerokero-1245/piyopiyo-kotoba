@@ -1,5 +1,6 @@
 // 端末内の保存もの（DESIGN §9・WORLD §7 準拠）。すべて `kotoba.` プレフィックス。
 // - あつめた ほし の累計（totalStars）… ごほうび（スタンプ）のコレクション。街の燃料（やおやさん）に合流。
+// - あつめた ほし を 0 に もどした ときの累計（starsResetAt）… 表示を 0 から数え直すための控え
 // - 有効カテゴリ（cats）… おとなモードのオン/オフ。空にはできない（最低1つ）。
 // - 読み上げ（tts）… おとなモードのオン/オフ。
 // web は localStorage に保存、native はセッション内キャッシュのみ（MVP）。外部送信なし。
@@ -10,6 +11,7 @@ import { Platform } from 'react-native';
 import { CategoryId, MojiMode } from './types';
 
 const STAR_KEY = 'kotoba.totalStars';
+const STAR_RESET_AT_KEY = 'kotoba.starsResetAt';
 const CATS_KEY = 'kotoba.cats';
 const TTS_KEY = 'kotoba.tts';
 const BGM_KEY = 'kotoba.bgm';
@@ -34,7 +36,8 @@ function ls(): WebStorage | null {
 
 // ── あつめた ほし（累計スタンプ）───────────────────────────────
 // 1問クリアごとに +1 する“ごほうび”の合計。減ることはない（マイナス要素ゼロ）。
-// リセットはおとなモードからのみ。数字スコアではなく「集めた⭐の数」を貯める。
+// おとなモードの「0に もどす」でも減らさない（表示だけ 0 に もどす。下の resetShownStars）。
+// 数字スコアではなく「集めた⭐の数」を貯める。
 let starCache: number | null = null;
 
 export function getTotalStars(): number {
@@ -69,15 +72,47 @@ export function addStars(n = 1): number {
   return next;
 }
 
-// 累計を0に戻す（おとなモード専用・2段階確認の先）。
-export function resetStars(): void {
-  starCache = 0;
+// ── 「あつめた ほし」の表示（おとなモードの 0に もどす）─────────────────
+// kotoba.totalStars は街（ぴよぴよランド）が読む燃料なので、0 に もどしても【意図的に残す】
+// （街の ⭐ を減らさない。WORLD.md §3.3「⭐は絶対に減らない」、おつかいめいろ・ぴよぴよさんすうと同じ方針）。
+// 0 に もどすのは ことばの中の表示だけ: もどした時点の累計を kotoba.starsResetAt に控え、
+// 表示は「累計 − 控え」にする。控えが累計より大きい（累計だけ消えた等）ときは控えを無視する。
+let resetAtCache: number | null = null;
+
+function getStarsResetAt(): number {
+  if (resetAtCache !== null) return resetAtCache;
   const store = ls();
   if (store) {
     try {
-      store.setItem(STAR_KEY, '0');
+      const v = store.getItem(STAR_RESET_AT_KEY);
+      if (v != null) {
+        const n = parseInt(v, 10);
+        if (Number.isFinite(n) && n >= 0) return (resetAtCache = n);
+      }
     } catch {
-      // 無視
+      // 無視して既定（0）へ
+    }
+  }
+  return (resetAtCache = 0);
+}
+
+// おとなモード・がんばりカードに出す「あつめた ほし」の数。
+export function getShownStars(): number {
+  const total = getTotalStars();
+  const at = getStarsResetAt();
+  return at <= total ? total - at : total;
+}
+
+// 「あつめた ほし」の表示を 0 に もどす（おとなモード専用・2段階確認の先）。累計 kotoba.totalStars は変えない。
+export function resetShownStars(): void {
+  const total = getTotalStars();
+  resetAtCache = total;
+  const store = ls();
+  if (store) {
+    try {
+      store.setItem(STAR_RESET_AT_KEY, String(total));
+    } catch {
+      // 無視（同じ起動中はキャッシュで 0 表示を保つ）
     }
   }
 }
