@@ -1,10 +1,11 @@
 // タイトル画面。文字ゼロでも進める大ボタン「あそぶ」＋概念の絵（ことばの もの が並ぶ）。
 // 隅の歯車を3秒長押しでおとなモードへ（4〜5歳が偶発しにくい親ゲート／DESIGN §7）。
 // 「あそぶ」タップで TTS を1回アンロックする（iOS Safari 対策・DESIGN §4）。
+// 左上の「まちへ もどる」で ぴよぴよランド（街）へ帰る。あそんでいる途中の画面には置かない。
 
 import React, { useRef } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, font, space } from '../theme';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { colors, font, radius, space } from '../theme';
 import BigButton from '../components/BigButton';
 import { playSound } from '../audio/sounds';
 import { sayPhrase, warmUpVoice } from '../audio/voice';
@@ -17,6 +18,16 @@ interface Props {
 }
 
 const HOLD_MS = 3000;
+
+// 街（ぴよぴよランド）は同じオリジンのルート https://kerokero-1245.github.io/ にある。
+// ことばは /piyopiyo-kotoba/ で配っているので、同じオリジンの "/" へ移れば街に戻る。
+// 街は web にしか無いので、ボタンも web のときだけ出す。
+const TOWN_URL = '/';
+const SHOW_TOWN = Platform.OS === 'web';
+function goTown() {
+  const loc = (globalThis as unknown as { location?: { assign(url: string): void } }).location;
+  loc?.assign(TOWN_URL);
+}
 
 export default function TitleScreen({ onPlay, onOtona }: Props) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -83,10 +94,26 @@ export default function TitleScreen({ onPlay, onOtona }: Props) {
         </View>
       </View>
 
+      {/* 街へ戻る（タイトルにだけ置く）。 */}
+      {SHOW_TOWN ? (
+        <Pressable
+          onPress={() => {
+            playSound('tap');
+            goTown();
+          }}
+          accessibilityRole="link"
+          accessibilityLabel="まちへ もどる"
+          style={({ pressed }) => [styles.town, pressed && styles.townPressed]}
+        >
+          <Text style={styles.townText}>まちへ もどる</Text>
+        </Pressable>
+      ) : null}
+
       {/* 親ゲート: 3秒長押しでおとなモード */}
       <Pressable
         onPressIn={startHold}
         onPressOut={clearHold}
+        accessibilityRole="button"
         accessibilityLabel="おとなモード（長押し）"
         hitSlop={12}
         style={styles.gear}
@@ -133,6 +160,27 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 320,
     marginTop: space.xl,
+  },
+  town: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    minHeight: 44,
+    paddingHorizontal: space.sm + 2,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 2,
+    borderColor: colors.itemBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  townPressed: {
+    backgroundColor: colors.itemPressed,
+  },
+  townText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.text,
   },
   gear: {
     position: 'absolute',
