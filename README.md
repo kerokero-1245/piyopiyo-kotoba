@@ -27,7 +27,7 @@
 - 罰・タイマー・スコア・ゲームオーバーなし。**失敗状態を作らない**（ベルトはループし続ける）。まちがいはぷるぷる震えるだけ。
 - 既存キャラIPは使わない。MVPは絵文字プレースホルダ。
 - 完全オフライン: バックエンド・アカウント・通信・外部送信なし。TTSも端末内合成。設定・累計⭐は端末内のみ。
-- 技術: Expo SDK 57 (React Native + TypeScript)、Node 20.20.0、アニメは標準 `Animated`、読み上げは `speechSynthesis`。
+- 技術: Expo SDK 57 (React Native + TypeScript)、Node 22.23.3、アニメは標準 `Animated`、読み上げは `speechSynthesis`。
 
 ## TTS（読み上げ）について
 
@@ -50,7 +50,7 @@
 
 ## 動かし方
 
-前提: **Node 20.20.0**。nvm なら `nvm use`（`.nvmrc` に 20.20.0）。
+前提: **Node 22.23.3**。nvm なら `nvm use`（`.nvmrc` に 22.23.3）。
 
 ```sh
 npm install          # 初回のみ
