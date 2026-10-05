@@ -56,10 +56,13 @@ export function setKotobaBgmOn(on: boolean): void {
 // 検証・デバッグ用の状態スナップショット（{ supported, enabled, running, songId, ducked, ownsCtx }）。
 export { getBgmState };
 
-// Playwright 等からの検証用に状態を window に露出（web のみ・無害）。既存挙動には影響しない。
-try {
-  (globalThis as unknown as { __kotobaBgm?: { getState: () => ReturnType<typeof getBgmState> } }).__kotobaBgm =
-    { getState: () => getBgmState() };
-} catch {
-  // 無害
+// Playwright 等からの検証用に状態を window に露出する。開発時（__DEV__）だけ。
+// 書き出した本番（expo export）には入れない（本番の globalThis に内部状態を公開しない）。
+if (__DEV__) {
+  try {
+    (globalThis as unknown as { __kotobaBgm?: { getState: () => ReturnType<typeof getBgmState> } }).__kotobaBgm =
+      { getState: () => getBgmState() };
+  } catch {
+    // 無害
+  }
 }
