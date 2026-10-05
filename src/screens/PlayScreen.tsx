@@ -14,7 +14,7 @@ import { generateSet } from '../game/quiz';
 import { displayWord } from '../game/words';
 import { addStars, getCategories, getMoji, getTtsOn } from '../settings';
 import { playSound } from '../audio/sounds';
-import { cancelVoice, sayWord, sayWrongCheer } from '../audio/voice';
+import { cancelVoice, sayAsk, sayWord, sayWrongCheer } from '../audio/voice';
 import { WordItem } from '../types';
 import Belt from '../components/Belt';
 import RevealCard from '../components/RevealCard';
@@ -82,9 +82,10 @@ export default function PlayScreen({ onHome }: Props) {
   // 出題バー・正解カードに出す「表示ラベル」（もじ設定で変換）。助詞や読み上げには効かせない。
   const answerLabel = displayWord(answer, mojiRef.current);
 
-  // 新しい問題を表示した瞬間に読み上げ（設定オンのときだけ）。
+  // 新しい問題を表示した瞬間に、出題文「◯◯ は どれ？」（同梱クリップ ask_<id>）を1回読む（設定オンのときだけ）。
+  // 前の声（正解の「◯◯！」など）が残っていれば止めてから鳴らす（clips.ts / speech.ts が直前を止める）。
   useEffect(() => {
-    if (ttsRef.current) sayWord(answer, { enabled: true });
+    if (ttsRef.current) sayAsk(answer, { enabled: true });
     // 問題が変わるたび（index/gameId）に1回。
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, gameId]);

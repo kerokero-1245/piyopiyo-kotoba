@@ -3,10 +3,10 @@
 //   ② speechSynthesis（tier2 / speech.ts）… ブラウザ内蔵の日本語合成音声（ja-JP）。
 //   ③ 無音（tier3）… どちらも無ければ何もしない。ひらがな表示だけでゲームは成立する。
 //
-// クリップは今回まだ同梱しない（voiceClips.CLIP_URLS は空）。よって現状は必ず ②→③ に落ちる。
-// 辞書エントリ・定型フレーズ・出題文それぞれに「クリップ基名」を対応付けられる設計にしてある
-// （wordVoice / PHRASE_VOICE / askVoice）。後工程でクリップを同梱すれば、同じ呼び出しのまま
-// tier1 が効くようになる（呼び出し側の変更は不要）。
+// クリップは VOICEVOX で事前生成して同梱済み（voiceClips.CLIP_URLS）。web では ① が鳴り、
+// 鳴らせない環境（native・Audio 非対応）だけが ②→③ に落ちる。
+// 辞書エントリ・定型フレーズ・出題文それぞれに「クリップ基名」を対応付けてある
+// （wordVoice / PHRASE_VOICE / askVoice）。
 //
 // iOS Safari の自動再生制限（最初のユーザー操作より前に音を出せない）は warmUpVoice() で守る。
 
@@ -110,7 +110,7 @@ export function wordVoice(word: WordItem): VoiceSpec {
 }
 
 // 出題文「◯◯ は どれ？」→ クリップ基名は 'ask_' + 単語id。フォールバックは全文。
-// （現状 UI は出題時に単語だけを読む。全文クリップを同梱したい時の対応点として用意。）
+// 問題が出たとき（PlayScreen が新しい問題を表示した瞬間）に1回読む（sayAsk）。
 export function askVoice(word: WordItem): VoiceSpec {
   return { clip: `ask_${word.id}`, text: `${word.word} は どれ？` };
 }
@@ -146,9 +146,14 @@ export function playVoice(spec: VoiceSpec, opts?: { enabled?: boolean }): void {
   done();
 }
 
-// 便利関数: 単語をそのまま読む（出題・🔊・正解の「◯◯！」で使う）。
+// 便利関数: 単語をそのまま読む（🔊・正解の「◯◯！」で使う）。
 export function sayWord(word: WordItem, opts?: { enabled?: boolean }): void {
   playVoice(wordVoice(word), opts);
+}
+
+// 便利関数: 出題文「◯◯ は どれ？」を読む（問題が出たときに1回）。🔊と正解の「◯◯！」は sayWord のまま。
+export function sayAsk(word: WordItem, opts?: { enabled?: boolean }): void {
+  playVoice(askVoice(word), opts);
 }
 
 // 定型フレーズを読む（タイトルの「ぴよぴよことば」・将来の「せいかい！」等の対応点）。
