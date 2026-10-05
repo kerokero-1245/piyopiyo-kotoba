@@ -32,9 +32,9 @@
 ## TTS（読み上げ）について
 
 読み上げは **3段構え**（`src/audio/voice.ts`）: ①同梱クリップ → ②`speechSynthesis` → ③無音。
-出題時・🔊タップ時・正解時に鳴る（おとなモードでオフにできる）。iOS Safari は最初のユーザー操作より前に発声できないため、タイトルの「あそぶ」タップで1回だけアンロックする。**読み上げが使えない環境（未対応・声なし・オフ）でも、ひらがな表示だけでゲームは完全に成立する**（TTS必須ではない）。
+出題時（「ばなな は どれ？」の出題文を1回）・🔊タップ時と正解時（単語）に鳴る（おとなモードでオフにできる）。新しい声は前の声を止めてから鳴らす。iOS Safari は最初のユーザー操作より前に発声できないため、タイトルの「あそぶ」タップで1回だけアンロックする。**読み上げが使えない環境（未対応・声なし・オフ）でも、ひらがな表示だけでゲームは完全に成立する**（TTS必須ではない）。
 
-- **①同梱クリップ（tier1）**: **VOICEVOX** で事前生成した音声（`assets/voice/*.m4a`・81個・約1.8MB）を同梱し、あれば最優先で再生する。話者は **ずんだもん（あまあま）**、4〜5歳向けにやや遅め（`speedScale` 0.92）。クレジット: **VOICEVOX:ずんだもん**（おとなモード画面下部にも表示）。生成の再現情報は [assets/voice/README.md](assets/voice/README.md)。
+- **①同梱クリップ（tier1）**: **VOICEVOX** で事前生成した音声（`assets/voice/*.m4a`・84個＝単語40・出題文40（`ask_*`）・定型句4・約1.8MB）を同梱し、あれば最優先で再生する。話者は **ずんだもん（あまあま）**、4〜5歳向けにやや遅め（`speedScale` 0.92）。クレジット: **VOICEVOX:ずんだもん**（おとなモード画面下部にも表示）。生成の再現情報は [assets/voice/README.md](assets/voice/README.md)。
 - **②`speechSynthesis`（tier2）**: クリップが無い基名・未対応環境ではブラウザ内蔵の日本語合成（`ja-JP`）へフォールバック。
 - 音声はいずれも端末内で完結（**外部送信ゼロ**）。同梱クリップもネットワークを使わないバンドルアセット。
 
@@ -60,7 +60,7 @@ npm start            # Expo を起動 → ターミナルで w を押すと Web 
 - `w` … ブラウザで開く（Webファースト。まずはこれ）
 - `i` / `a` … iOS シミュレータ / Android エミュレータ（任意）
 
-ショートカット: `npm run web`。
+ショートカット: `npm run web`。型の確認は `npm run typecheck`（`tsc --noEmit`）。
 
 ### Web ビルド（配布用の静的サイト書き出し）
 
@@ -74,10 +74,15 @@ GitHub Pages はサブパス（`/piyopiyo-kotoba/`）配信のため、CI では
 EXPO_BASE_URL=/piyopiyo-kotoba npx expo export --platform web
 ```
 
+公開 HTML の型は [public/index.html](public/index.html)（`lang="ja"`・説明文・OGP・manifest へのリンク・読み込み中の背景色）。`public/` のほかのファイル（`manifest.webmanifest`・`icon-192.png`・`icon-512.png`・`apple-touch-icon.png`・OGP 画像 `og.png`）は書き出しにそのままコピーされる。アイコン類（`public/` と `assets/` の PNG）は、街の やおやさん と同じ自作 SVG（piyo-assets の `ninjin.svg`。`assets/svg/ninjin.svg` と同一）から作った。
+
 ### 遊び方（フェーズ1）
 
 タイトルの「あそぶ」→ もんだい画面。出題バー「◯◯ は どれ？」（🔊で読み上げ）を聞いて、ベルトコンベアを右→左に流れてくる絵から正しいものをタップ。正解すると ぽんっと大きくなって「◯◯！」と読み上げ、⭐がたまる。まちがえるとその絵がぷるぷる震えるだけ（罰なし・ベルトは流れ続ける）。5問おわると「きょうの がんばりカード」。
 ※ タイトル右下の歯車を **3秒長押し** すると、おとなモード（カテゴリのオン/オフ・読み上げのオン/オフ・⭐リセット）に入る。
+※ タイトル左上の「まちへ もどる」で ぴよぴよランド（同じオリジンの `/`）へ戻る（Web のみ。もんだい・がんばりカード・おとなモードには置かない）。
+
+**⭐**: 1問クリアごとに累計 `kotoba.totalStars` が1つ増え（再挑戦してからのクリアも +1）、街（ぴよぴよランド）の やおやさん がこれを燃料として読む。おとなモードの「0に もどす」は、ことばの中の「あつめた ほし」（おとなモード・がんばりカード）だけを 0 から数え直す（もどした時点の累計を `kotoba.starsResetAt` に控える）。**街へ渡す累計 `kotoba.totalStars` は減らさない。**
 
 ## 画面・ファイル構成
 
@@ -86,7 +91,7 @@ App.tsx                     文字ヘッダ無しの最小ステートルータ�
 src/
   theme.ts                  配色・フォント・余白の基準値（4歳向け）
   types.ts                  CategoryId / WordItem / Question / Route
-  settings.ts               カテゴリ・読み上げ・BGM・累計⭐（kotoba.*）の保存（web は localStorage）
+  settings.ts               カテゴリ・もじ・読み上げ・BGM・累計⭐（kotoba.*）の保存（web は localStorage）
   game/
     words.ts                単語辞書（約40語・4カテゴリ）＋カテゴリ定義
     quiz.ts                 出題生成（generateQuestion / generateSet / 選択肢生成）
@@ -94,7 +99,7 @@ src/
     sounds.ts               効果音（web は Web Audio 合成、native は無音スタブ）
     voice.ts                読み上げの入口。3段構え（①同梱クリップ→②speechSynthesis→③無音）
     clips.ts                tier1: 同梱音声クリップ再生（web は Audio 要素、native 無音スタブ）
-    voiceClips.ts           同梱クリップの登録表（CLIP_URLS）。VOICEVOX 生成の m4a 81個を登録済み
+    voiceClips.ts           同梱クリップの登録表（CLIP_URLS）。VOICEVOX 生成の m4a 84個を登録済み
     speech.ts               tier2: speechSynthesis（web、native は無音スタブ）
     bgm.ts                  BGM 配線（初期ON・トグル kotoba.bgm・声ダッキング・ctx共有）
     bgm/                    共有BGM基盤（engine.ts＋songs.ts・Web Audio生成のオルゴール曲）
@@ -106,7 +111,8 @@ src/
     ClearOverlay.tsx        「きょうの がんばりカード」セット完了の祝福
     ProgressStar.tsx        進捗ドット（クリアで⭐に変わる）
   screens/
-    TitleScreen.tsx         タイトル（あそぶ / 親ゲート / TTSアンロック）
+    TitleScreen.tsx         タイトル（あそぶ / まちへ もどる / 親ゲート / TTSアンロック）
     PlayScreen.tsx          もんだい本体（出題バー→ベルト→正解/ぷるぷる→次へ）
-    OtonaScreen.tsx         おとなモード（カテゴリ・読み上げ・⭐リセット）
+    OtonaScreen.tsx         おとなモード（カテゴリ・もじ・読み上げ・BGM・⭐リセット）
+public/                     Web 書き出しの HTML の型・manifest・アイコン・OGP 画像
 ```
