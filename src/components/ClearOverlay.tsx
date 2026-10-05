@@ -1,16 +1,34 @@
 // 1セット（5問）ぜんぶ終わったときの「きょうの がんばりカード」（DESIGN §14）。
 // 集めた⭐を1つずつ順に出す（数え上げのトーン）→ 5つ揃って祝福。
 // その下に「あつめた ほし ⭐×N」（累計）を控えめに表示。スコアも罰も出さない（DESIGN §5）。
-// ⭐の累計は PlayScreen が1問クリアごとに settings へ加算済み。ここでは読むだけ。
+// ⭐の累計は PlayScreen が1問クリアごとに settings へ加算済み。ここでは読むだけ（表示は getShownStars）。
 // ぴよぴよさんすうから流用（累計は kotoba.totalStars を読む）。
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Platform, StyleSheet, Text, useWindowDimensions, View, ViewStyle } from 'react-native';
 import { colors, font, space } from '../theme';
 import BigButton from './BigButton';
 import Confetti from './Confetti';
-import { getTotalStars } from '../settings';
+import { getShownStars } from '../settings';
 import { playCountTone, playSound } from '../audio/sounds';
+
+// 暗幕は画面全体に敷く。このオーバーレイは最大幅 480 の枠（App.tsx の frame）の内側に置かれるので、
+// absolute のままだと広い画面では枠の中だけが暗くなる。web では position: fixed でビューポート全体を覆う
+// （react-native-web は fixed をそのまま CSS に渡す。RN の型には無いので型だけ合わせる）。
+const BACKDROP_FULL: ViewStyle | null =
+  Platform.OS === 'web' ? ({ position: 'fixed' } as unknown as ViewStyle) : null;
+
+// カードの⭐を1行に収める大きさ。枠（最大幅 480・左右 space.md）→ このオーバーレイ（余白 space.md）→
+// カード（最大幅 380・枠線 4・余白 space.md）の内側の幅から決める。390 幅では従来どおり 44（文字 38）、
+// 360 幅で 41、320 幅で 33 になる（従来は 360 幅で 4+1、320 幅で 3+2 に折り返していた）。
+const STAR_SLOT = 44;
+const STAR_FONT = 38;
+const STAR_GAP = space.xs;
+function starSlotSize(windowW: number, count: number): number {
+  const frameW = Math.min(windowW, 480) - space.md * 2;
+  const cardInner = Math.min(frameW - space.md * 2, 380) - 4 * 2 - space.md * 2;
+  return Math.min(STAR_SLOT, Math.floor((cardInner - STAR_GAP * (count - 1)) / count));
+}
 
 interface Props {
   starCount: number; // このセットで集めた⭐の数（=5）
@@ -19,7 +37,7 @@ interface Props {
 }
 
 // カード上の⭐スロット1つ。まだ出ていないときは薄い☆、出た瞬間に⭐が「ぽんっ」と現れる。
-function CardStar({ filled }: { filled: boolean }) {
+function CardStar({ filled, size }: { filled: boolean; size: number }) {
   const pop = useRef(new Animated.Value(filled ? 1 : 0)).current;
   const prev = useRef(filled);
   useEffect(() => {
@@ -30,25 +48,30 @@ function CardStar({ filled }: { filled: boolean }) {
     prev.current = filled;
   }, [filled, pop]);
 
+  // 枠の幅が足りないときだけ小さくする（44 のときは従来と同じ 44x50・文字 38）。
+  const slot = { width: size, height: size + 6 };
+  const glyph = { fontSize: Math.round((STAR_FONT * size) / STAR_SLOT), lineHeight: size };
   if (!filled) {
     return (
-      <View style={styles.starSlot}>
-        <Text style={styles.starEmpty}>☆</Text>
+      <View style={[styles.starSlot, slot]}>
+        <Text style={[styles.starEmpty, glyph]}>☆</Text>
       </View>
     );
   }
   const scale = pop.interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] });
   const opacity = pop.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1] });
   return (
-    <View style={styles.starSlot}>
-      <Animated.Text style={[styles.starFull, { opacity, transform: [{ scale }] }]}>⭐</Animated.Text>
+    <View style={[styles.starSlot, slot]}>
+      <Animated.Text style={[styles.starFull, glyph, { opacity, transform: [{ scale }] }]}>⭐</Animated.Text>
     </View>
   );
 }
 
 export default function ClearOverlay({ starCount, onReplay, onHome }: Props) {
-  // 累計は既に加算済み。マウント時に一度だけ読む。
-  const total = useRef(getTotalStars()).current;
+  // 累計は既に加算済み。マウント時に一度だけ読む（おとなモードで 0 に もどした後は、そこからの数）。
+  const total = useRef(getShownStars()).current;
+  const { width: windowW } = useWindowDimensions();
+  const starSize = starSlotSize(windowW, starCount);
 
   const [shown, setShown] = useState(0); // いくつ⭐が現れたか（0..starCount）
   const [gathered, setGathered] = useState(false); // 5つ揃った（祝福）
@@ -95,7 +118,7 @@ export default function ClearOverlay({ starCount, onReplay, onHome }: Props) {
 
   return (
     <View style={styles.root} pointerEvents="box-none">
-      <View style={styles.backdrop} pointerEvents="none" />
+      <View style={[styles.backdrop, BACKDROP_FULL]} pointerEvents="none" />
       {gathered ? <Confetti /> : null}
 
       <Animated.View style={[styles.card, { opacity, transform: [{ scale }] }]}>
@@ -103,7 +126,7 @@ export default function ClearOverlay({ starCount, onReplay, onHome }: Props) {
 
         <View style={styles.stars}>
           {Array.from({ length: starCount }, (_, i) => (
-            <CardStar key={i} filled={i < shown} />
+            <CardStar key={i} filled={i < shown} size={starSize} />
           ))}
         </View>
 
@@ -174,11 +197,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   stars: {
+    // 5つは必ず1行に並べる（大きさは starSlotSize で枠に合わせる）。
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     justifyContent: 'center',
-    columnGap: space.xs,
-    rowGap: space.xs,
+    columnGap: STAR_GAP,
   },
   starSlot: {
     width: 44,
