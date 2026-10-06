@@ -3,9 +3,25 @@
 // その下に「あつめた ほし ⭐×N」（累計）を控えめに表示。スコアも罰も出さない（DESIGN §5）。
 // ⭐の累計は PlayScreen が1問クリアごとに settings へ加算済み。ここでは読むだけ（表示は getShownStars）。
 // ぴよぴよさんすうから流用（累計は kotoba.totalStars を読む）。
+//
+// 中身（カード＋ボタン）はスクロールできる入れ物に入れる。背の低い画面（568x320 などの横向き）では
+// 縦に積むと「おうちへ」が画面の外に出て押せなかったので、スクロールで必ず届くようにする。
+// 縦持ちで高さが足りる画面では中身を中央に置くので、見た目は従来と同じ。おつかいめいろと同じ作り
+// （ぴよぴよさんすうは横向きでカードとボタンを左右に並べるが、ことばは枠が最大幅 480 のままで並べる幅が無いので
+// スクロールだけにする）。
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Platform, StyleSheet, Text, useWindowDimensions, View, ViewStyle } from 'react-native';
+import {
+  Animated,
+  Easing,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+  ViewStyle,
+} from 'react-native';
 import { colors, font, space } from '../theme';
 import BigButton from './BigButton';
 import Confetti from './Confetti';
@@ -18,6 +34,11 @@ import { playCountTone, playSound } from '../audio/sounds';
 const BACKDROP_FULL: ViewStyle | null =
   Platform.OS === 'web' ? ({ position: 'fixed' } as unknown as ViewStyle) : null;
 
+// スクロールの入れ物は、枠（App.tsx の frame）の上下の余白（上 space.lg・下 space.md）まで広げて画面の上端〜下端を使う。
+// 中央の位置（枠の中央＝画面の中央より (space.lg − space.md)/2 下）は上下の余白の差で保つので、
+// 中身が画面に収まる限り見た目は従来と同じ。収まらないときだけスクロールになる（おつかいめいろと同じ）。
+const SCROLL_EDGE = 4; // スクロールになったときの上下の最小のすき間
+
 // カードの⭐を1行に収める大きさ。枠（最大幅 480・左右 space.md）→ このオーバーレイ（余白 space.md）→
 // カード（最大幅 380・枠線 4・余白 space.md）の内側の幅から決める。390 幅では従来どおり 44（文字 38）、
 // 360 幅で 41、320 幅で 33 になる（従来は 360 幅で 4+1、320 幅で 3+2 に折り返していた）。
@@ -29,6 +50,25 @@ function starSlotSize(windowW: number, count: number): number {
   const cardInner = Math.min(frameW - space.md * 2, 380) - 4 * 2 - space.md * 2;
   return Math.min(STAR_SLOT, Math.floor((cardInner - STAR_GAP * (count - 1)) / count));
 }
+
+// カードの見出し「きょうの がんばりカード」と「ぜんぶ できたね!」を語の途中で折らない文字の大きさ。
+// 見出しはカードの左右の余白のうち TEXT_BLEED だけ食い込んで使い（中央そろえなので位置は変わらない）、
+// 1字 = 1em（空白は 0.5 字）で見積もった幅に収まる大きさにする（題字と同じ考え方・保守的）。
+// 360 幅以上は従来どおり 22 / 28、320 幅で 18 / 25（従来は語の途中で2行に折り返していた）。
+const TITLE_FONT = 22;
+const DONE_FONT = 28;
+const TEXT_BLEED = space.sm;
+function cardTextW(windowW: number): number {
+  const frameW = Math.min(windowW, 480) - space.md * 2;
+  return Math.min(frameW - space.md * 2, 380) - 4 * 2 - space.md * 2 + TEXT_BLEED * 2;
+}
+function fitFont(text: string, base: number, availW: number): number {
+  let cols = 0;
+  for (const ch of text) cols += ch === ' ' ? 0.5 : 1;
+  return Math.min(base, Math.floor(availW / cols));
+}
+const TITLE_TEXT = 'きょうの がんばりカード';
+const DONE_TEXT = 'ぜんぶ できたね!';
 
 interface Props {
   starCount: number; // このセットで集めた⭐の数（=5）
@@ -72,6 +112,9 @@ export default function ClearOverlay({ starCount, onReplay, onHome }: Props) {
   const total = useRef(getShownStars()).current;
   const { width: windowW } = useWindowDimensions();
   const starSize = starSlotSize(windowW, starCount);
+  const textW = cardTextW(windowW);
+  const titleFont = { fontSize: fitFont(TITLE_TEXT, TITLE_FONT, textW) };
+  const doneFont = { fontSize: fitFont(DONE_TEXT, DONE_FONT, textW) };
 
   const [shown, setShown] = useState(0); // いくつ⭐が現れたか（0..starCount）
   const [gathered, setGathered] = useState(false); // 5つ揃った（祝福）
@@ -121,34 +164,40 @@ export default function ClearOverlay({ starCount, onReplay, onHome }: Props) {
       <View style={[styles.backdrop, BACKDROP_FULL]} pointerEvents="none" />
       {gathered ? <Confetti /> : null}
 
-      <Animated.View style={[styles.card, { opacity, transform: [{ scale }] }]}>
-        <Text style={styles.title}>きょうの がんばりカード</Text>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <Animated.View style={[styles.card, { opacity, transform: [{ scale }] }]}>
+          <Text style={[styles.title, titleFont]}>{TITLE_TEXT}</Text>
 
-        <View style={styles.stars}>
-          {Array.from({ length: starCount }, (_, i) => (
-            <CardStar key={i} filled={i < shown} size={starSize} />
-          ))}
+          <View style={styles.stars}>
+            {Array.from({ length: starCount }, (_, i) => (
+              <CardStar key={i} filled={i < shown} size={starSize} />
+            ))}
+          </View>
+
+          {/* 5つ揃ったら「できたね!」。揃うまでは高さを確保して見た目が跳ねないようにする。 */}
+          <View style={styles.doneSlot}>
+            {gathered ? <Text style={[styles.doneText, doneFont]}>{DONE_TEXT}</Text> : null}
+          </View>
+
+          {/* 累計コレクション（控えめ・数字スコアではなく“集めた⭐の数”） */}
+          <Text style={styles.total}>あつめた ほし ⭐ × {total}</Text>
+        </Animated.View>
+
+        <View style={styles.buttons}>
+          <BigButton
+            emoji="🔁"
+            label="もういちど"
+            onPress={onReplay}
+            color={colors.play}
+            pressedColor={colors.playPressed}
+          />
+          <BigButton emoji="🏠" label="おうちへ" onPress={onHome} />
         </View>
-
-        {/* 5つ揃ったら「できたね!」。揃うまでは高さを確保して見た目が跳ねないようにする。 */}
-        <View style={styles.doneSlot}>
-          {gathered ? <Text style={styles.doneText}>ぜんぶ できたね!</Text> : null}
-        </View>
-
-        {/* 累計コレクション（控えめ・数字スコアではなく“集めた⭐の数”） */}
-        <Text style={styles.total}>あつめた ほし ⭐ × {total}</Text>
-      </Animated.View>
-
-      <View style={styles.buttons}>
-        <BigButton
-          emoji="🔁"
-          label="もういちど"
-          onPress={onReplay}
-          color={colors.play}
-          pressedColor={colors.playPressed}
-        />
-        <BigButton emoji="🏠" label="おうちへ" onPress={onHome} />
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -160,9 +209,22 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+  },
+  scroll: {
+    position: 'absolute',
+    top: -space.lg,
+    bottom: -space.md,
+    left: 0,
+    right: 0,
+  },
+  // 縦持ちでは従来の root と同じ中央寄せ（横の余白 space.md）。高さが足りないときはスクロールで届く。
+  content: {
+    flexGrow: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: space.md,
+    paddingHorizontal: space.md,
+    paddingTop: space.lg - space.md + SCROLL_EDGE,
+    paddingBottom: SCROLL_EDGE,
   },
   backdrop: {
     position: 'absolute',
@@ -190,11 +252,14 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   title: {
-    fontSize: 22,
+    fontSize: TITLE_FONT,
     fontWeight: '900',
     color: colors.text,
     marginBottom: space.sm,
     textAlign: 'center',
+    // カードの左右の余白に TEXT_BLEED だけ食い込む（cardTextW）。中央そろえなので位置は変わらない。
+    alignSelf: 'stretch',
+    marginHorizontal: -TEXT_BLEED,
   },
   stars: {
     // 5つは必ず1行に並べる（大きさは starSlotSize で枠に合わせる）。
@@ -221,13 +286,15 @@ const styles = StyleSheet.create({
     color: colors.progressOff,
   },
   doneSlot: {
+    alignSelf: 'stretch',
+    marginHorizontal: -TEXT_BLEED,
     minHeight: 40,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: space.xs,
   },
   doneText: {
-    fontSize: 28,
+    fontSize: DONE_FONT,
     fontWeight: '900',
     color: colors.button,
   },
