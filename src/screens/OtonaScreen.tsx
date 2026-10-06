@@ -59,15 +59,40 @@ function optionFontSize(windowW: number): number {
   return Math.min(font.big, Math.floor(optionInnerW(windowW, 2) / 5.2));
 }
 
-// カテゴリ（絵文字＋4字まで）の文字の大きさ。2つ並びの内側から絵文字と間（space.xs）を引いた幅に「くだもの」等の4字を収める。
-function catFontSize(windowW: number): number {
-  return Math.min(font.body, Math.floor((optionInnerW(windowW, 2) - CAT_EMOJI_W - space.xs) / 4.2));
+// カテゴリ（絵文字＋4字まで）の文字の大きさ。n 列の内側から絵文字と間（space.xs）を引いた幅に「くだもの」等の4字を収める。
+function catFontSizeFor(windowW: number, n: number): number {
+  return Math.min(font.body, Math.floor((optionInnerW(windowW, n) - CAT_EMOJI_W - space.xs) / 4.2));
+}
+
+// カテゴリの並び。2つ並び（2×2）で文字が CAT_MIN_FONT 以上になる幅ならそのまま、ならない狭い画面（320 幅など）は
+// 1列に並べて文字を小さくしない（従来は 320 幅で 13px まで縮んでいた）。360 幅以上は従来どおり 2×2。
+const CAT_MIN_FONT = 16;
+function catLayout(windowW: number): { cols: 1 | 2; fontSize: number } {
+  const two = catFontSizeFor(windowW, 2);
+  if (two >= CAT_MIN_FONT) return { cols: 2, fontSize: two };
+  return { cols: 1, fontSize: catFontSizeFor(windowW, 1) };
+}
+
+// もじ 3択（ひらがな/カタカナ/まぜがき＝どれも4字）の文字の大きさ。3つ並びの選択肢（枠線3・左右の余白なし）の内側に
+// 4字が1行で収まる大きさ。1字 = 1em で見積もる（保守的。題字と同じ考え方）。上限は従来の 18。
+// 390・360 幅では従来どおり 18、320 幅で 16（従来は 18 のまま「ひら…」と省略されていた）。
+const MOJI_FONT = 18;
+const MOJI_CHARS = 4;
+const MOJI_GAP = space.sm;
+function mojiFontSize(windowW: number): number {
+  const frameW = Math.min(windowW, 480) - space.md * 2;
+  const cardInner = frameW - CARD_PAD * 2 - 2;
+  const inner = (cardInner - MOJI_GAP * 2) / 3 - OPTION_BORDER * 2;
+  return Math.min(MOJI_FONT, Math.floor(inner / MOJI_CHARS));
 }
 
 export default function OtonaScreen({ onBack }: Props) {
   const { width: windowW } = useWindowDimensions();
   const optionFont = { fontSize: optionFontSize(windowW) };
-  const catFont = { fontSize: catFontSize(windowW) };
+  const cat = catLayout(windowW);
+  const catFont = { fontSize: cat.fontSize };
+  const catWidth = cat.cols === 1 ? styles.catOneCol : null;
+  const mojiFont = { fontSize: mojiFontSize(windowW) };
   const [cats, setCats] = useState<CategoryId[]>(getCategories());
   const [moji, setMojiState] = useState<MojiMode>(getMoji());
   const [tts, setTts] = useState<boolean>(getTtsOn());
@@ -135,7 +160,7 @@ export default function OtonaScreen({ onBack }: Props) {
                   accessibilityRole="button"
                   accessibilityState={{ selected: active }}
                   disabled={lastOne}
-                  style={[styles.cat, active ? styles.catActive : styles.catIdle, lastOne && styles.catLocked]}
+                  style={[styles.cat, catWidth, active ? styles.catActive : styles.catIdle, lastOne && styles.catLocked]}
                 >
                   <Text style={styles.catEmoji}>{meta.emoji}</Text>
                   <Text style={[styles.catText, catFont, active && styles.catTextActive]}>{meta.label}</Text>
@@ -164,7 +189,7 @@ export default function OtonaScreen({ onBack }: Props) {
                   style={[styles.mojiOption, active ? styles.optionActive : styles.optionIdle]}
                   testID={`moji-${o.id}`}
                 >
-                  <Text style={[styles.mojiOptionText, active && styles.optionTextActive]} numberOfLines={1}>
+                  <Text style={[styles.mojiOptionText, mojiFont, active && styles.optionTextActive]} numberOfLines={1}>
                     {o.label}
                   </Text>
                   {active ? <Text style={styles.mojiCheck}>✓</Text> : null}
@@ -321,7 +346,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     marginBottom: space.md,
   },
-  // カテゴリは2×2グリッド
+  // カテゴリは2×2グリッド（狭い画面では1列＝catOneCol）
   catGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -339,6 +364,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     columnGap: space.xs,
     paddingHorizontal: OPTION_PAD,
+  },
+  catOneCol: {
+    width: '100%',
   },
   catIdle: {
     backgroundColor: colors.surface,
@@ -364,22 +392,24 @@ const styles = StyleSheet.create({
   // もじは3択なので幅がきつい。列を詰め、各ボタンは縦積み（ラベル＋✓）で狭くても収める。
   mojiOptions: {
     flexDirection: 'row',
-    columnGap: space.sm,
+    columnGap: MOJI_GAP,
   },
   mojiOption: {
     flex: 1,
     minHeight: 72,
     borderRadius: radius.md,
-    borderWidth: 3,
+    borderWidth: OPTION_BORDER,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'column',
     rowGap: space.xs,
-    paddingHorizontal: 4, // 4文字ラベルが最小幅（390px）でも収まるよう詰める
+    // 左右の余白は取らない（4字ぶんの幅を文字に回す。文字は中央そろえなので見た目の余白は残る）。
+    paddingHorizontal: 0,
   },
   mojiOptionText: {
-    // 3択で幅がきついので font.body(20) より一段小さく。狭い画面でも4文字（ひらがな/カタカナ/まぜがき）を省略せず表示する。
-    fontSize: 18,
+    // 3択で幅がきついので font.body(20) より一段小さく。枠の幅から mojiFontSize で決め、狭い画面でも
+    // 4文字（ひらがな/カタカナ/まぜがき）を省略せず表示する。
+    fontSize: MOJI_FONT,
     fontWeight: '900',
     color: colors.text,
   },
