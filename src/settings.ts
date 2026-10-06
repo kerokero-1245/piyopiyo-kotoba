@@ -23,6 +23,7 @@ export const ALL_CATEGORIES: CategoryId[] = ['yasai', 'kudamono', 'doubutsu', 'n
 interface WebStorage {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
+  removeItem(key: string): void;
 }
 function ls(): WebStorage | null {
   if (Platform.OS !== 'web') return null;
@@ -58,7 +59,10 @@ export function getTotalStars(): number {
 }
 
 // n 個の⭐を加える（既定1）。新しい累計を返す。
+// 加える前に控え（kotoba.starsResetAt）が今の累計より大きくないかを確かめる（下の discardStaleResetAt）。
+// おとなモードもがんばりカードも開かずに遊んだときでも、累計が控えを越えた時点で表示が減って見えないようにするため。
 export function addStars(n = 1): number {
+  discardStaleResetAt();
   const next = getTotalStars() + Math.max(0, n);
   starCache = next;
   const store = ls();
@@ -76,7 +80,10 @@ export function addStars(n = 1): number {
 // kotoba.totalStars は街（ぴよぴよランド）が読む燃料なので、0 に もどしても【意図的に残す】
 // （街の ⭐ を減らさない。WORLD.md §3.3「⭐は絶対に減らない」、おつかいめいろ・ぴよぴよさんすうと同じ方針）。
 // 0 に もどすのは ことばの中の表示だけ: もどした時点の累計を kotoba.starsResetAt に控え、
-// 表示は「累計 − 控え」にする。控えが累計より大きい（累計だけ消えた等）ときは控えを無視する。
+// 表示は「累計 − 控え」にする。控えが累計より大きい（累計だけ消えた・書き換えられた等）と分かったら、
+// その控えは捨てる（キーを消し、0 として扱う＝控えの無い旧データと同じ表示「累計そのまま」）。
+// 捨てずに無視するだけだと、累計が控えを越えた時点で表示が「累計 − 控え」に切り替わって減って見えていた
+// （例: 累計 7・控え 9 → 表示 7、1セット後に累計 12 → 表示 3）。ぴよぴよさんすうと同じ扱い。
 let resetAtCache: number | null = null;
 
 function getStarsResetAt(): number {
@@ -96,11 +103,28 @@ function getStarsResetAt(): number {
   return (resetAtCache = 0);
 }
 
+// 控えを捨てる（キーを消す）。累計 kotoba.totalStars には触らない。
+function discardStarsResetAt(): void {
+  resetAtCache = 0;
+  const store = ls();
+  if (store) {
+    try {
+      store.removeItem(STAR_RESET_AT_KEY);
+    } catch {
+      // 消せなくても、同じ起動中はキャッシュ（0）で表示を保つ
+    }
+  }
+}
+
+// 控えが今の累計より大きければ捨てる。
+function discardStaleResetAt(): void {
+  if (getStarsResetAt() > getTotalStars()) discardStarsResetAt();
+}
+
 // おとなモード・がんばりカードに出す「あつめた ほし」の数。
 export function getShownStars(): number {
-  const total = getTotalStars();
-  const at = getStarsResetAt();
-  return at <= total ? total - at : total;
+  discardStaleResetAt();
+  return getTotalStars() - getStarsResetAt();
 }
 
 // 「あつめた ほし」の表示を 0 に もどす（おとなモード専用・2段階確認の先）。累計 kotoba.totalStars は変えない。
