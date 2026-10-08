@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import { Route } from './src/types';
 import { colors, space } from './src/theme';
+import { FRAME_PAD_BOTTOM, FRAME_PAD_TOP } from './src/layout';
 import TitleScreen from './src/screens/TitleScreen';
 import PlayScreen from './src/screens/PlayScreen';
 import OtonaScreen from './src/screens/OtonaScreen';
@@ -49,8 +50,8 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     maxWidth: 480,
-    paddingTop: space.lg,
-    paddingBottom: space.md,
+    paddingTop: FRAME_PAD_TOP,
+    paddingBottom: FRAME_PAD_BOTTOM,
     paddingHorizontal: space.md,
   },
 });

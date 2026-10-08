@@ -23,6 +23,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { colors, font, space } from '../theme';
+import { FRAME_PAD_BOTTOM, FRAME_PAD_TOP } from '../layout';
 import BigButton from './BigButton';
 import Confetti from './Confetti';
 import { getShownStars } from '../settings';
@@ -34,9 +35,10 @@ import { playCountTone, playSound } from '../audio/sounds';
 const BACKDROP_FULL: ViewStyle | null =
   Platform.OS === 'web' ? ({ position: 'fixed' } as unknown as ViewStyle) : null;
 
-// スクロールの入れ物は、枠（App.tsx の frame）の上下の余白（上 space.lg・下 space.md）まで広げて画面の上端〜下端を使う。
-// 中央の位置（枠の中央＝画面の中央より (space.lg − space.md)/2 下）は上下の余白の差で保つので、
-// 中身が画面に収まる限り見た目は従来と同じ。収まらないときだけスクロールになる（おつかいめいろと同じ）。
+// スクロールの入れ物は、枠（App.tsx の frame）の上下の余白（FRAME_PAD_TOP・FRAME_PAD_BOTTOM。src/layout.ts）まで
+// 広げて画面の上端〜下端を使う。中央の位置（枠の中央＝画面の中央より (FRAME_PAD_TOP − FRAME_PAD_BOTTOM)/2 下）は
+// 上下の余白の差で保つので、中身が画面に収まる限り見た目は従来と同じ。収まらないときだけスクロールになる
+// （おつかいめいろと同じ）。
 const SCROLL_EDGE = 4; // スクロールになったときの上下の最小のすき間
 
 // カードの⭐を1行に収める大きさ。枠（最大幅 480・左右 space.md）→ このオーバーレイ（余白 space.md）→
@@ -212,8 +214,8 @@ const styles = StyleSheet.create({
   },
   scroll: {
     position: 'absolute',
-    top: -space.lg,
-    bottom: -space.md,
+    top: -FRAME_PAD_TOP,
+    bottom: -FRAME_PAD_BOTTOM,
     left: 0,
     right: 0,
   },
@@ -223,7 +225,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: space.md,
-    paddingTop: space.lg - space.md + SCROLL_EDGE,
+    paddingTop: FRAME_PAD_TOP - FRAME_PAD_BOTTOM + SCROLL_EDGE,
     paddingBottom: SCROLL_EDGE,
   },
   backdrop: {
