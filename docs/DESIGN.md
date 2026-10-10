@@ -277,6 +277,7 @@ export type Route = { name: "title" } | { name: "play" } | { name: "otona" };
 ### 開発環境メモ
 
 - Node は **v22（.nvmrc: 22.23.3）**。CI（Actions）も Node 22。
+- 整形は Prettier の既定設定（`.prettierrc.json` は `{}`）。`npm run format` で整形し、CI は `npm run format:check` で検査する。
 - リポジトリ名は `piyopiyo-kotoba`。公開URL `https://kerokero-1245.github.io/piyopiyo-kotoba/`。
 
 ---
