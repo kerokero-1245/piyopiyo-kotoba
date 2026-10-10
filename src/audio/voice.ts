@@ -10,11 +10,11 @@
 //
 // iOS Safari の自動再生制限（最初のユーザー操作より前に音を出せない）は warmUpVoice() で守る。
 
-import { WordItem } from '../types';
-import { isClipAvailable, playClip, warmUpClips, cancelClip } from './clips';
-import { CLIP_URLS } from './voiceClips';
-import { speak, warmUpSpeech, cancelSpeech, isSpeechAvailable } from './speech';
-import { duckBgm, unduckBgm } from './bgm/engine';
+import { WordItem } from "../types";
+import { isClipAvailable, playClip, warmUpClips, cancelClip } from "./clips";
+import { CLIP_URLS } from "./voiceClips";
+import { speak, warmUpSpeech, cancelSpeech, isSpeechAvailable } from "./speech";
+import { duckBgm, unduckBgm } from "./bgm/engine";
 
 // ── BGM ダッキング協調 ────────────────────────────────────────────────
 // ことばは発話頻度が高い（sayWord を出題ごと・タップごとに連発する）。声のたびに
@@ -118,17 +118,17 @@ export function askVoice(word: WordItem): VoiceSpec {
 // 定型フレーズ。clip=同梱時の基名 / text=フォールバック読み上げ。
 // title  … タイトル画面で「ぴよぴよことば」を読む（タップ起点）。
 // arere / oshii … 誤答タップのやさしい声かけ（否定語なし・責めない・WORLD 正典）。
-export type PhraseKey = 'seikai' | 'title' | 'arere' | 'oshii';
+export type PhraseKey = "seikai" | "title" | "arere" | "oshii";
 export const PHRASE_VOICE: Record<PhraseKey, VoiceSpec> = {
-  seikai: { clip: 'p_seikai', text: 'せいかい' },
-  title: { clip: 'p_title', text: 'ぴよぴよことば' },
-  arere: { clip: 'p_arere', text: 'あれれ' },
-  oshii: { clip: 'p_oshii', text: 'おしい' },
+  seikai: { clip: "p_seikai", text: "せいかい" },
+  title: { clip: "p_title", text: "ぴよぴよことば" },
+  arere: { clip: "p_arere", text: "あれれ" },
+  oshii: { clip: "p_oshii", text: "おしい" },
 };
 
 // 誤答タップの声かけを「あれれ」→「おしい」で交互に返すローテ（呼ぶたび1つ進む）。
 // どちらも やさしい相づち。否定語・失敗表示はしない（罰なし・DESIGN §5 / WORLD 正典）。
-const WRONG_CHEERS: PhraseKey[] = ['arere', 'oshii'];
+const WRONG_CHEERS: PhraseKey[] = ["arere", "oshii"];
 let wrongCheerIdx = 0;
 
 // ── 再生（3段構えの解決）─────────────────────────────────────────────

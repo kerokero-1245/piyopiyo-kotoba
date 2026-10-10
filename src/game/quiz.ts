@@ -8,17 +8,17 @@
 //   4. 有効カテゴリが1つだけのときのみ、例外的に同カテゴリ内から誤答を選ぶ（§13 仮置き）。
 //   5. 選択肢をシャッフルしてベルトに載せる。5問で1セット（generateSet(5)）。
 
-import { CategoryId, Question, WordItem } from '../types';
-import { wordsByCategory } from './words';
-import { ALL_CATEGORIES } from '../settings';
+import { CategoryId, Question, WordItem } from "../types";
+import { wordsByCategory } from "./words";
+import { ALL_CATEGORIES } from "../settings";
 
 // 見た目が紛らわしい絵文字ペア（1問に同居させない）。emoji の組で持つ。
 // 現状は 🍎りんご(くだもの) と 🍅とまと(やさい) の赤丸ペアのみ。増やすときはここに足す。
-const CONFUSABLE: ReadonlyArray<readonly [string, string]> = [['🍎', '🍅']];
+const CONFUSABLE: ReadonlyArray<readonly [string, string]> = [["🍎", "🍅"]];
 
 function confusable(a: string, b: string): boolean {
   return CONFUSABLE.some(
-    ([x, y]) => (a === x && b === y) || (a === y && b === x)
+    ([x, y]) => (a === x && b === y) || (a === y && b === x),
   );
 }
 
@@ -49,7 +49,10 @@ function anyConfusable(chosen: WordItem[], cand: WordItem): boolean {
 
 // 1問を作る。activeCats は有効カテゴリ（空なら全カテゴリ扱い）。
 // avoidWord を渡すと、その語が正解に連続しないように軽く避ける。
-export function generateQuestion(activeCats: CategoryId[], avoidWord?: string): Question {
+export function generateQuestion(
+  activeCats: CategoryId[],
+  avoidWord?: string,
+): Question {
   const cats = normalizeCats(activeCats);
 
   // 正解カテゴリと正解語。avoidWord と同じ語は軽く避ける。
@@ -68,7 +71,9 @@ export function generateQuestion(activeCats: CategoryId[], avoidWord?: string): 
   if (cats.length === 1) {
     // §13: 有効カテゴリが1つだけ → 同カテゴリ内から誤答（見た目が似る可能性を許容）。
     const K = Math.min(4, wordsByCategory(answerCat).length);
-    const pool = shuffle(wordsByCategory(answerCat).filter((w) => w.word !== answer.word));
+    const pool = shuffle(
+      wordsByCategory(answerCat).filter((w) => w.word !== answer.word),
+    );
     for (const cand of pool) {
       if (choices.length >= K) break;
       if (anyConfusable(choices, cand)) continue; // 紛らわしいペアは避ける

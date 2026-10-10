@@ -11,7 +11,7 @@
 // （ぴよぴよさんすうは横向きでカードとボタンを左右に並べるが、ことばは枠が最大幅 480 のままで並べる幅が無いので
 // スクロールだけにする）。
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Easing,
@@ -22,19 +22,21 @@ import {
   useWindowDimensions,
   View,
   ViewStyle,
-} from 'react-native';
-import { colors, font, space } from '../theme';
-import { FRAME_PAD_BOTTOM, FRAME_PAD_TOP } from '../layout';
-import BigButton from './BigButton';
-import Confetti from './Confetti';
-import { getShownStars } from '../settings';
-import { playCountTone, playSound } from '../audio/sounds';
+} from "react-native";
+import { colors, font, space } from "../theme";
+import { FRAME_PAD_BOTTOM, FRAME_PAD_TOP } from "../layout";
+import BigButton from "./BigButton";
+import Confetti from "./Confetti";
+import { getShownStars } from "../settings";
+import { playCountTone, playSound } from "../audio/sounds";
 
 // 暗幕は画面全体に敷く。このオーバーレイは最大幅 480 の枠（App.tsx の frame）の内側に置かれるので、
 // absolute のままだと広い画面では枠の中だけが暗くなる。web では position: fixed でビューポート全体を覆う
 // （react-native-web は fixed をそのまま CSS に渡す。RN の型には無いので型だけ合わせる）。
 const BACKDROP_FULL: ViewStyle | null =
-  Platform.OS === 'web' ? ({ position: 'fixed' } as unknown as ViewStyle) : null;
+  Platform.OS === "web"
+    ? ({ position: "fixed" } as unknown as ViewStyle)
+    : null;
 
 // スクロールの入れ物は、枠（App.tsx の frame）の上下の余白（FRAME_PAD_TOP・FRAME_PAD_BOTTOM。src/layout.ts）まで
 // 広げて画面の上端〜下端を使う。中央の位置（枠の中央＝画面の中央より (FRAME_PAD_TOP − FRAME_PAD_BOTTOM)/2 下）は
@@ -51,7 +53,10 @@ const STAR_GAP = space.xs;
 function starSlotSize(windowW: number, count: number): number {
   const frameW = Math.min(windowW, 480) - space.md * 2;
   const cardInner = Math.min(frameW - space.md * 2, 380) - 4 * 2 - space.md * 2;
-  return Math.min(STAR_SLOT, Math.floor((cardInner - STAR_GAP * (count - 1)) / count));
+  return Math.min(
+    STAR_SLOT,
+    Math.floor((cardInner - STAR_GAP * (count - 1)) / count),
+  );
 }
 
 // カードの見出し「きょうの がんばりカード」と「ぜんぶ できたね!」を語の途中で折らない文字の大きさ。
@@ -63,15 +68,17 @@ const DONE_FONT = 28;
 const TEXT_BLEED = space.sm;
 function cardTextW(windowW: number): number {
   const frameW = Math.min(windowW, 480) - space.md * 2;
-  return Math.min(frameW - space.md * 2, 380) - 4 * 2 - space.md * 2 + TEXT_BLEED * 2;
+  return (
+    Math.min(frameW - space.md * 2, 380) - 4 * 2 - space.md * 2 + TEXT_BLEED * 2
+  );
 }
 function fitFont(text: string, base: number, availW: number): number {
   let cols = 0;
-  for (const ch of text) cols += ch === ' ' ? 0.5 : 1;
+  for (const ch of text) cols += ch === " " ? 0.5 : 1;
   return Math.min(base, Math.floor(availW / cols));
 }
-const TITLE_TEXT = 'きょうの がんばりカード';
-const DONE_TEXT = 'ぜんぶ できたね!';
+const TITLE_TEXT = "きょうの がんばりカード";
+const DONE_TEXT = "ぜんぶ できたね!";
 
 interface Props {
   starCount: number; // このセットで集めた⭐の数（=5）
@@ -86,14 +93,22 @@ function CardStar({ filled, size }: { filled: boolean; size: number }) {
   useEffect(() => {
     if (filled && !prev.current) {
       pop.setValue(0);
-      Animated.spring(pop, { toValue: 1, friction: 4, tension: 130, useNativeDriver: false }).start();
+      Animated.spring(pop, {
+        toValue: 1,
+        friction: 4,
+        tension: 130,
+        useNativeDriver: false,
+      }).start();
     }
     prev.current = filled;
   }, [filled, pop]);
 
   // 枠の幅が足りないときだけ小さくする（44 のときは従来と同じ 44x50・文字 38）。
   const slot = { width: size, height: size + 6 };
-  const glyph = { fontSize: Math.round((STAR_FONT * size) / STAR_SLOT), lineHeight: size };
+  const glyph = {
+    fontSize: Math.round((STAR_FONT * size) / STAR_SLOT),
+    lineHeight: size,
+  };
   if (!filled) {
     return (
       <View style={[styles.starSlot, slot]}>
@@ -102,10 +117,17 @@ function CardStar({ filled, size }: { filled: boolean; size: number }) {
     );
   }
   const scale = pop.interpolate({ inputRange: [0, 1], outputRange: [0.2, 1] });
-  const opacity = pop.interpolate({ inputRange: [0, 0.4, 1], outputRange: [0, 1, 1] });
+  const opacity = pop.interpolate({
+    inputRange: [0, 0.4, 1],
+    outputRange: [0, 1, 1],
+  });
   return (
     <View style={[styles.starSlot, slot]}>
-      <Animated.Text style={[styles.starFull, glyph, { opacity, transform: [{ scale }] }]}>⭐</Animated.Text>
+      <Animated.Text
+        style={[styles.starFull, glyph, { opacity, transform: [{ scale }] }]}
+      >
+        ⭐
+      </Animated.Text>
     </View>
   );
 }
@@ -134,7 +156,12 @@ export default function ClearOverlay({ starCount, onReplay, onHome }: Props) {
 
     // カードがふわっと出る。
     Animated.parallel([
-      Animated.spring(scale, { toValue: 1, friction: 5, tension: 90, useNativeDriver: false }),
+      Animated.spring(scale, {
+        toValue: 1,
+        friction: 5,
+        tension: 90,
+        useNativeDriver: false,
+      }),
       Animated.timing(opacity, {
         toValue: 1,
         duration: 220,
@@ -147,15 +174,21 @@ export default function ClearOverlay({ starCount, onReplay, onHome }: Props) {
     const startDelay = 480;
     const stepMs = 460;
     for (let i = 0; i < starCount; i++) {
-      later(() => {
-        setShown(i + 1);
-        playCountTone(i);
-      }, startDelay + i * stepMs);
+      later(
+        () => {
+          setShown(i + 1);
+          playCountTone(i);
+        },
+        startDelay + i * stepMs,
+      );
     }
-    later(() => {
-      setGathered(true);
-      playSound('clear'); // 5つ揃ってファンファーレ＋紙吹雪
-    }, startDelay + starCount * stepMs + 140);
+    later(
+      () => {
+        setGathered(true);
+        playSound("clear"); // 5つ揃ってファンファーレ＋紙吹雪
+      },
+      startDelay + starCount * stepMs + 140,
+    );
 
     return () => timers.current.forEach(clearTimeout);
     // マウント時のみ（done で1回だけ表示される）。
@@ -172,7 +205,9 @@ export default function ClearOverlay({ starCount, onReplay, onHome }: Props) {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View style={[styles.card, { opacity, transform: [{ scale }] }]}>
+        <Animated.View
+          style={[styles.card, { opacity, transform: [{ scale }] }]}
+        >
           <Text style={[styles.title, titleFont]}>{TITLE_TEXT}</Text>
 
           <View style={styles.stars}>
@@ -183,7 +218,9 @@ export default function ClearOverlay({ starCount, onReplay, onHome }: Props) {
 
           {/* 5つ揃ったら「できたね!」。揃うまでは高さを確保して見た目が跳ねないようにする。 */}
           <View style={styles.doneSlot}>
-            {gathered ? <Text style={[styles.doneText, doneFont]}>{DONE_TEXT}</Text> : null}
+            {gathered ? (
+              <Text style={[styles.doneText, doneFont]}>{DONE_TEXT}</Text>
+            ) : null}
           </View>
 
           {/* 累計コレクション（控えめ・数字スコアではなく“集めた⭐の数”） */}
@@ -207,14 +244,14 @@ export default function ClearOverlay({ starCount, onReplay, onHome }: Props) {
 
 const styles = StyleSheet.create({
   root: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
   },
   scroll: {
-    position: 'absolute',
+    position: "absolute",
     top: -FRAME_PAD_TOP,
     bottom: -FRAME_PAD_BOTTOM,
     left: 0,
@@ -223,14 +260,14 @@ const styles = StyleSheet.create({
   // 縦持ちでは従来の root と同じ中央寄せ（横の余白 space.md）。高さが足りないときはスクロールで届く。
   content: {
     flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: space.md,
     paddingTop: FRAME_PAD_TOP - FRAME_PAD_BOTTOM + SCROLL_EDGE,
     paddingBottom: SCROLL_EDGE,
   },
   backdrop: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
@@ -238,17 +275,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.overlay,
   },
   card: {
-    alignItems: 'center',
+    alignItems: "center",
     backgroundColor: colors.surface,
     borderRadius: 28,
     paddingVertical: space.md,
     paddingHorizontal: space.md,
     marginBottom: space.lg,
     maxWidth: 380,
-    width: '100%',
+    width: "100%",
     borderWidth: 4,
     borderColor: colors.white,
-    shadowColor: '#00000066',
+    shadowColor: "#00000066",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 14,
@@ -256,59 +293,59 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: TITLE_FONT,
-    fontWeight: '900',
+    fontWeight: "900",
     color: colors.text,
     marginBottom: space.sm,
-    textAlign: 'center',
+    textAlign: "center",
     // カードの左右の余白に TEXT_BLEED だけ食い込む（cardTextW）。中央そろえなので位置は変わらない。
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
     marginHorizontal: -TEXT_BLEED,
   },
   stars: {
     // 5つは必ず1行に並べる（大きさは starSlotSize で枠に合わせる）。
-    flexDirection: 'row',
-    flexWrap: 'nowrap',
-    justifyContent: 'center',
+    flexDirection: "row",
+    flexWrap: "nowrap",
+    justifyContent: "center",
     columnGap: STAR_GAP,
   },
   starSlot: {
     width: 44,
     height: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   starFull: {
     fontSize: 38,
     lineHeight: 44,
-    textAlign: 'center',
+    textAlign: "center",
   },
   starEmpty: {
     fontSize: 38,
     lineHeight: 44,
-    textAlign: 'center',
+    textAlign: "center",
     color: colors.progressOff,
   },
   doneSlot: {
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
     marginHorizontal: -TEXT_BLEED,
     minHeight: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: space.xs,
   },
   doneText: {
     fontSize: DONE_FONT,
-    fontWeight: '900',
+    fontWeight: "900",
     color: colors.button,
   },
   total: {
     fontSize: font.small,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.subtext,
     marginTop: space.sm,
   },
   buttons: {
-    width: '100%',
+    width: "100%",
     maxWidth: 360,
     rowGap: space.sm,
   },

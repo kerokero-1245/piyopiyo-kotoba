@@ -6,13 +6,13 @@
 // - native（iOS/Android 実機）では現状なにも鳴らさない“無音スタブ”。フェーズ2で expo-audio に
 //   差し替える際は本モジュールの中身だけ置き換えればよい（呼び出し側は変更不要）。
 
-import { Platform } from 'react-native';
+import { Platform } from "react-native";
 
 export type SoundName =
-  | 'tap' // ボタン反応・🔊
-  | 'wrong' // まちがい（罰ではないやさしい合図）
-  | 'star' // ⭐スタンプ獲得（1問クリア）ぽん・きらっ
-  | 'clear'; // セット完了 ファンファーレ
+  | "tap" // ボタン反応・🔊
+  | "wrong" // まちがい（罰ではないやさしい合図）
+  | "star" // ⭐スタンプ獲得（1問クリア）ぽん・きらっ
+  | "clear"; // セット完了 ファンファーレ
 
 interface Note {
   freq: number;
@@ -22,20 +22,20 @@ interface Note {
 
 // name ごとの音色。強い音を避け、やさしい音を意図（DESIGN §5 感覚にやさしく）。
 const TONES: Record<SoundName, Note[]> = {
-  tap: [{ freq: 660, dur: 0.08, type: 'sine' }],
+  tap: [{ freq: 660, dur: 0.08, type: "sine" }],
   wrong: [
-    { freq: 392, dur: 0.12, type: 'sine' },
-    { freq: 330, dur: 0.16, type: 'sine' }, // ゆるく下降（責めない）
+    { freq: 392, dur: 0.12, type: "sine" },
+    { freq: 330, dur: 0.16, type: "sine" }, // ゆるく下降（責めない）
   ],
   star: [
-    { freq: 784, dur: 0.07, type: 'triangle' }, // ぽん
-    { freq: 1319, dur: 0.16, type: 'sine' }, // きらっ（高いミ）
+    { freq: 784, dur: 0.07, type: "triangle" }, // ぽん
+    { freq: 1319, dur: 0.16, type: "sine" }, // きらっ（高いミ）
   ],
   clear: [
-    { freq: 523, dur: 0.12, type: 'sine' }, // ド
-    { freq: 659, dur: 0.12, type: 'sine' }, // ミ
-    { freq: 784, dur: 0.12, type: 'sine' }, // ソ
-    { freq: 1047, dur: 0.3, type: 'sine' }, // 高いド
+    { freq: 523, dur: 0.12, type: "sine" }, // ド
+    { freq: 659, dur: 0.12, type: "sine" }, // ミ
+    { freq: 784, dur: 0.12, type: "sine" }, // ソ
+    { freq: 1047, dur: 0.3, type: "sine" }, // 高いド
   ],
 };
 
@@ -43,7 +43,7 @@ const TONES: Record<SoundName, Note[]> = {
 let ctx: AudioContext | null = null;
 
 function getCtx(): AudioContext | null {
-  if (Platform.OS !== 'web') return null;
+  if (Platform.OS !== "web") return null;
   try {
     if (!ctx) {
       const g = globalThis as unknown as {
@@ -55,7 +55,7 @@ function getCtx(): AudioContext | null {
       ctx = new AC();
     }
     // ユーザー操作起点で resume（iOS Safari 対策）。
-    if (ctx.state === 'suspended') void ctx.resume();
+    if (ctx.state === "suspended") void ctx.resume();
     return ctx;
   } catch {
     return null;
@@ -63,7 +63,13 @@ function getCtx(): AudioContext | null {
 }
 
 // やわらかいエンベロープで1音鳴らす（プチッというクリック音を避ける）。
-function tone(c: AudioContext, freq: number, dur: number, type: OscillatorType, at: number): void {
+function tone(
+  c: AudioContext,
+  freq: number,
+  dur: number,
+  type: OscillatorType,
+  at: number,
+): void {
   const osc = c.createOscillator();
   const gain = c.createGain();
   osc.type = type;
@@ -105,7 +111,7 @@ export function playCountTone(index: number): void {
   try {
     const base = 523; // ド
     const freq = base * Math.pow(2, Math.min(index, 12) / 12);
-    tone(c, freq, 0.2, 'sine', c.currentTime);
+    tone(c, freq, 0.2, "sine", c.currentTime);
   } catch {
     // 無視
   }

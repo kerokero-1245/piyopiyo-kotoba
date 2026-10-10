@@ -15,7 +15,7 @@
 //
 // DOM lib に依存しないよう、必要な形だけを最小宣言して globalThis から取り出す。
 
-import { Platform } from 'react-native';
+import { Platform } from "react-native";
 
 interface SSVoice {
   lang: string;
@@ -40,7 +40,7 @@ interface SS {
 }
 
 function getSynth(): SS | null {
-  if (Platform.OS !== 'web') return null;
+  if (Platform.OS !== "web") return null;
   try {
     const g = globalThis as unknown as { speechSynthesis?: SS };
     return g.speechSynthesis ?? null;
@@ -50,9 +50,11 @@ function getSynth(): SS | null {
 }
 
 function getUtteranceCtor(): UtteranceCtor | null {
-  if (Platform.OS !== 'web') return null;
+  if (Platform.OS !== "web") return null;
   try {
-    const g = globalThis as unknown as { SpeechSynthesisUtterance?: UtteranceCtor };
+    const g = globalThis as unknown as {
+      SpeechSynthesisUtterance?: UtteranceCtor;
+    };
     return g.SpeechSynthesisUtterance ?? null;
   } catch {
     return null;
@@ -103,11 +105,11 @@ export function warmUpSpeech(): void {
   if (!s || !U) return;
   wireVoices();
   try {
-    const u = new U(' ');
+    const u = new U(" ");
     u.volume = 0;
     u.rate = 1;
     u.pitch = 1;
-    u.lang = 'ja-JP';
+    u.lang = "ja-JP";
     s.cancel();
     s.speak(u);
   } catch {
@@ -118,7 +120,10 @@ export function warmUpSpeech(): void {
 // text を ja-JP で少しゆっくり読み上げる。enabled=false / 非対応 では何もしない。
 // 実際に発声したら true（onDone は onend/onerror で1回だけ呼ぶ＝BGM ダッキング解除に使う）、
 // no-op なら false を返す（呼び出し側が tier3 として即ダッキング解除できる）。
-export function speak(text: string, opts?: { enabled?: boolean; onDone?: () => void }): boolean {
+export function speak(
+  text: string,
+  opts?: { enabled?: boolean; onDone?: () => void },
+): boolean {
   if (opts && opts.enabled === false) return false;
   const s = getSynth();
   const U = getUtteranceCtor();
@@ -127,7 +132,7 @@ export function speak(text: string, opts?: { enabled?: boolean; onDone?: () => v
   try {
     s.cancel(); // 前の発声を止めて重ならないように
     const u = new U(text);
-    u.lang = 'ja-JP';
+    u.lang = "ja-JP";
     u.rate = 0.9; // 少しゆっくり
     u.pitch = 1;
     u.volume = 1;

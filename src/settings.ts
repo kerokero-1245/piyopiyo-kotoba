@@ -7,17 +7,22 @@
 // 取得失敗時は既定値にフォールバック。消えても遊びは壊れない（罰・失敗表示はしない）。
 // 他アプリ・街のキー（meiro.* sansu.* land.*）は読み書き禁止。書いてよいのは kotoba.* のみ。
 
-import { Platform } from 'react-native';
-import { CategoryId, MojiMode } from './types';
+import { Platform } from "react-native";
+import { CategoryId, MojiMode } from "./types";
 
-const STAR_KEY = 'kotoba.totalStars';
-const STAR_RESET_AT_KEY = 'kotoba.starsResetAt';
-const CATS_KEY = 'kotoba.cats';
-const TTS_KEY = 'kotoba.tts';
-const BGM_KEY = 'kotoba.bgm';
-const MOJI_KEY = 'kotoba.moji';
+const STAR_KEY = "kotoba.totalStars";
+const STAR_RESET_AT_KEY = "kotoba.starsResetAt";
+const CATS_KEY = "kotoba.cats";
+const TTS_KEY = "kotoba.tts";
+const BGM_KEY = "kotoba.bgm";
+const MOJI_KEY = "kotoba.moji";
 
-export const ALL_CATEGORIES: CategoryId[] = ['yasai', 'kudamono', 'doubutsu', 'norimono'];
+export const ALL_CATEGORIES: CategoryId[] = [
+  "yasai",
+  "kudamono",
+  "doubutsu",
+  "norimono",
+];
 
 // 型の都合で最小限だけ宣言（DOM lib に依存しない）。
 interface WebStorage {
@@ -26,9 +31,10 @@ interface WebStorage {
   removeItem(key: string): void;
 }
 function ls(): WebStorage | null {
-  if (Platform.OS !== 'web') return null;
+  if (Platform.OS !== "web") return null;
   try {
-    const s = (globalThis as unknown as { localStorage?: WebStorage }).localStorage;
+    const s = (globalThis as unknown as { localStorage?: WebStorage })
+      .localStorage;
     return s ?? null;
   } catch {
     return null;
@@ -146,7 +152,9 @@ export function resetShownStars(): void {
 let catsCache: CategoryId[] | null = null;
 
 function isCategoryId(v: unknown): v is CategoryId {
-  return v === 'yasai' || v === 'kudamono' || v === 'doubutsu' || v === 'norimono';
+  return (
+    v === "yasai" || v === "kudamono" || v === "doubutsu" || v === "norimono"
+  );
 }
 
 export function getCategories(): CategoryId[] {
@@ -207,8 +215,8 @@ export function getTtsOn(): boolean {
   if (store) {
     try {
       const v = store.getItem(TTS_KEY);
-      if (v === 'off') return (ttsCache = false);
-      if (v === 'on') return (ttsCache = true);
+      if (v === "off") return (ttsCache = false);
+      if (v === "on") return (ttsCache = true);
     } catch {
       // 無視して既定へ
     }
@@ -221,7 +229,7 @@ export function setTtsOn(on: boolean): void {
   const store = ls();
   if (store) {
     try {
-      store.setItem(TTS_KEY, on ? 'on' : 'off');
+      store.setItem(TTS_KEY, on ? "on" : "off");
     } catch {
       // 無視
     }
@@ -239,8 +247,8 @@ export function getBgmOn(): boolean {
   if (store) {
     try {
       const v = store.getItem(BGM_KEY);
-      if (v === 'off') return (bgmCache = false);
-      if (v === 'on') return (bgmCache = true);
+      if (v === "off") return (bgmCache = false);
+      if (v === "on") return (bgmCache = true);
     } catch {
       // 無視して既定へ
     }
@@ -253,7 +261,7 @@ export function setBgmOn(on: boolean): void {
   const store = ls();
   if (store) {
     try {
-      store.setItem(BGM_KEY, on ? 'on' : 'off');
+      store.setItem(BGM_KEY, on ? "on" : "off");
     } catch {
       // 無視
     }
@@ -266,7 +274,7 @@ export function setBgmOn(on: boolean): void {
 let mojiCache: MojiMode | null = null;
 
 function isMojiMode(v: unknown): v is MojiMode {
-  return v === 'hiragana' || v === 'katakana' || v === 'mazegaki';
+  return v === "hiragana" || v === "katakana" || v === "mazegaki";
 }
 
 export function getMoji(): MojiMode {
@@ -280,11 +288,11 @@ export function getMoji(): MojiMode {
       // 無視して既定へ
     }
   }
-  return (mojiCache = 'hiragana');
+  return (mojiCache = "hiragana");
 }
 
 export function setMoji(mode: MojiMode): void {
-  const next = isMojiMode(mode) ? mode : 'hiragana';
+  const next = isMojiMode(mode) ? mode : "hiragana";
   mojiCache = next;
   const store = ls();
   if (store) {

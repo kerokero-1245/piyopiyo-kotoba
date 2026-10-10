@@ -8,15 +8,22 @@
 // ときは全体をスクロールして全部に届く。並びの順がそのまま Tab の順（まちへ もどる → 題字 → あそぶ → 歯車）になる。
 // おつかいめいろ・ぴよぴよさんすうのタイトルと同じ作り。
 
-import React, { useRef } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { colors, font, space } from '../theme';
-import BigButton from '../components/BigButton';
-import TownLink, { SHOW_TOWN, TOWN_LINK_HEIGHT } from '../components/TownLink';
-import { playSound } from '../audio/sounds';
-import { sayPhrase, warmUpVoice } from '../audio/voice';
-import { initKotobaBgm } from '../audio/bgm';
-import { getTtsOn } from '../settings';
+import React, { useRef } from "react";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { colors, font, space } from "../theme";
+import BigButton from "../components/BigButton";
+import TownLink, { SHOW_TOWN, TOWN_LINK_HEIGHT } from "../components/TownLink";
+import { playSound } from "../audio/sounds";
+import { sayPhrase, warmUpVoice } from "../audio/voice";
+import { initKotobaBgm } from "../audio/bgm";
+import { getTtsOn } from "../settings";
 
 interface Props {
   onPlay: () => void;
@@ -35,7 +42,10 @@ const TITLE_EDGE = 8;
 const FRAME_MAX_W = 480; // App.tsx の frame の最大幅
 function titleFontSize(windowW: number): number {
   const avail = Math.min(windowW, FRAME_MAX_W) - TITLE_EDGE * 2;
-  return Math.min(font.huge, Math.floor((avail - TITLE_LETTER_SPACING * TITLE_CHARS) / TITLE_CHARS));
+  return Math.min(
+    font.huge,
+    Math.floor((avail - TITLE_LETTER_SPACING * TITLE_CHARS) / TITLE_CHARS),
+  );
 }
 
 export default function TitleScreen({ onPlay, onOtona }: Props) {
@@ -59,10 +69,10 @@ export default function TitleScreen({ onPlay, onOtona }: Props) {
   // タイトルをタップすると「ぴよぴよことば」を読み上げる（ジェスチャ起点＝自動再生制限を守る）。
   // 最初のタップでもあるので warmUpVoice() で読み上げをアンロックしてから読む。読み上げオフなら黙る。
   const sayTitle = () => {
-    playSound('tap');
+    playSound("tap");
     warmUpVoice();
     initKotobaBgm(); // 最初のタップ（ジェスチャ起点）で BGM を開始（設定 ON のとき）
-    sayPhrase('title', { enabled: getTtsOn() });
+    sayPhrase("title", { enabled: getTtsOn() });
   };
 
   return (
@@ -75,7 +85,7 @@ export default function TitleScreen({ onPlay, onOtona }: Props) {
         {/* 街へ戻る（タイトルにだけ置く）。上に専用の行を取り、題字以下はその下に流す。 */}
         {SHOW_TOWN ? (
           <View style={styles.townRow}>
-            <TownLink onPress={() => playSound('tap')} />
+            <TownLink onPress={() => playSound("tap")} />
           </View>
         ) : null}
 
@@ -89,7 +99,11 @@ export default function TitleScreen({ onPlay, onOtona }: Props) {
               hitSlop={12}
               testID="title-say"
             >
-              <Text style={[styles.title, { fontSize: titleFontSize(windowW) }]}>ぴよぴよことば</Text>
+              <Text
+                style={[styles.title, { fontSize: titleFontSize(windowW) }]}
+              >
+                ぴよぴよことば
+              </Text>
             </Pressable>
           </View>
           <Text style={styles.subtitle}>きいて さがそう</Text>
@@ -110,7 +124,7 @@ export default function TitleScreen({ onPlay, onOtona }: Props) {
               color={colors.play}
               pressedColor={colors.playPressed}
               onPress={() => {
-                playSound('tap');
+                playSound("tap");
                 warmUpVoice(); // 最初のタップで読み上げ（クリップ＋TTS）をアンロック
                 initKotobaBgm(); // 同じジェスチャで BGM を開始（設定 ON のとき）
                 onPlay();
@@ -155,35 +169,35 @@ const styles = StyleSheet.create({
   townRow: {
     height: TOWN_LINK_HEIGHT,
     marginBottom: space.sm,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    alignItems: "flex-start",
   },
   center: {
     flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   titleRow: {
-    alignSelf: 'stretch',
+    alignSelf: "stretch",
     marginHorizontal: -space.md,
-    alignItems: 'center',
+    alignItems: "center",
   },
   title: {
     fontSize: font.huge,
-    fontWeight: '900',
+    fontWeight: "900",
     color: colors.text,
     letterSpacing: TITLE_LETTER_SPACING,
   },
   subtitle: {
     fontSize: font.body,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.subtext,
     marginTop: space.xs,
     marginBottom: space.lg,
   },
   concept: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     columnGap: space.sm,
     marginVertical: space.md,
   },
@@ -191,14 +205,14 @@ const styles = StyleSheet.create({
     fontSize: 46,
   },
   playWrap: {
-    width: '100%',
+    width: "100%",
     maxWidth: 320,
     marginTop: space.xl,
   },
   // 歯車の行（右下）。歯車の位置は従来（右 space.sm・下 space.sm）と同じ。
   gearRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+    flexDirection: "row",
+    justifyContent: "flex-end",
     paddingRight: space.sm,
     paddingBottom: space.sm,
   },

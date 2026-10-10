@@ -10,8 +10,8 @@
 //
 // DOM lib に依存しないよう、必要な形だけ最小宣言して globalThis から取り出す。
 
-import { Platform } from 'react-native';
-import { CLIP_URLS, hasClip } from './voiceClips';
+import { Platform } from "react-native";
+import { CLIP_URLS, hasClip } from "./voiceClips";
 
 interface AudioEl {
   play(): Promise<void> | void;
@@ -24,7 +24,7 @@ interface AudioEl {
 type AudioCtor = new (src?: string) => AudioEl;
 
 function getAudioCtor(): AudioCtor | null {
-  if (Platform.OS !== 'web') return null;
+  if (Platform.OS !== "web") return null;
   try {
     const g = globalThis as unknown as { Audio?: AudioCtor };
     return g.Audio ?? null;
@@ -66,8 +66,8 @@ export function playClip(name: string, onDone?: () => void): boolean {
       if (settled) return;
       settled = true;
       try {
-        a.removeEventListener?.('ended', finish);
-        a.removeEventListener?.('error', finish);
+        a.removeEventListener?.("ended", finish);
+        a.removeEventListener?.("error", finish);
       } catch {
         // 無視
       }
@@ -80,15 +80,15 @@ export function playClip(name: string, onDone?: () => void): boolean {
       }
     };
     try {
-      a.addEventListener?.('ended', finish);
-      a.addEventListener?.('error', finish);
+      a.addEventListener?.("ended", finish);
+      a.addEventListener?.("error", finish);
     } catch {
       // addEventListener 非対応でも再生は試みる（onDone は下の play() 拒否か保険で解決）
     }
     const p = a.play();
     // play() の Promise 拒否（ユーザー操作前など）は握りつぶす（遊びは壊さない）。
     // 鳴らなかったときも onDone を呼んでダッキングを残さない。
-    if (p && typeof (p as Promise<void>).catch === 'function') {
+    if (p && typeof (p as Promise<void>).catch === "function") {
       (p as Promise<void>).catch(() => finish());
     }
     return true;
@@ -111,7 +111,7 @@ export function warmUpClips(): void {
     const a = new A(CLIP_URLS[first]);
     a.muted = true;
     const p = a.play();
-    if (p && typeof (p as Promise<void>).then === 'function') {
+    if (p && typeof (p as Promise<void>).then === "function") {
       (p as Promise<void>)
         .then(() => {
           try {

@@ -7,20 +7,26 @@
 // レイアウト（さんすうの教訓 / DESIGN §8）: 縦を「ヘッダー＋出題バー＋ベルト」で構成し、ベルトを
 // flex:1 で確保。ベルトの実測サイズ（onLayout）から絵の大きさを算出し、可視領域を絶対にはみ出さない。
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, font, radius, space } from '../theme';
-import { generateSet } from '../game/quiz';
-import { displayWord } from '../game/words';
-import { addStars, getCategories, getMoji, getTtsOn } from '../settings';
-import { playSound } from '../audio/sounds';
-import { cancelVoice, sayAsk, sayWord, sayWrongCheer } from '../audio/voice';
-import { WordItem } from '../types';
-import Belt from '../components/Belt';
-import RevealCard from '../components/RevealCard';
-import ClearOverlay from '../components/ClearOverlay';
-import Confetti from '../components/Confetti';
-import ProgressStar from '../components/ProgressStar';
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import {
+  LayoutChangeEvent,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { colors, font, radius, space } from "../theme";
+import { generateSet } from "../game/quiz";
+import { displayWord } from "../game/words";
+import { addStars, getCategories, getMoji, getTtsOn } from "../settings";
+import { playSound } from "../audio/sounds";
+import { cancelVoice, sayAsk, sayWord, sayWrongCheer } from "../audio/voice";
+import { WordItem } from "../types";
+import Belt from "../components/Belt";
+import RevealCard from "../components/RevealCard";
+import ClearOverlay from "../components/ClearOverlay";
+import Confetti from "../components/Confetti";
+import ProgressStar from "../components/ProgressStar";
 
 interface Props {
   onHome: () => void;
@@ -36,7 +42,7 @@ function computeAskFontSize(text: string, availW: number): number {
   const MIN = 17; // これ以上は小さくしない（読める大きさを確保）
   if (availW <= 0) return MAX;
   let cols = 0;
-  for (const ch of text) cols += ch === ' ' ? 0.5 : 1;
+  for (const ch of text) cols += ch === " " ? 0.5 : 1;
   if (cols <= 0) return MAX;
   // 太字(900)の字送りぶんの安全係数(1.02)＋左右の余白(0.94)を見込む。
   const fit = (availW * 0.94) / (cols * 1.02);
@@ -50,7 +56,9 @@ export default function PlayScreen({ onHome }: Props) {
   // もじ表示（ひらがな/カタカナ/まぜがき）もマウント時に固定。表示ラベルだけに使う（読み上げは word のまま）。
   const mojiRef = useRef(getMoji());
 
-  const [questions, setQuestions] = useState(() => generateSet(catsRef.current, SET_SIZE));
+  const [questions, setQuestions] = useState(() =>
+    generateSet(catsRef.current, SET_SIZE),
+  );
   const [index, setIndex] = useState(0);
   const [gameId, setGameId] = useState(0);
   // このセットで集めた⭐スタンプの数（=クリアした問題数）。進捗ドットが左から⭐に変わる。
@@ -74,7 +82,7 @@ export default function PlayScreen({ onHome }: Props) {
       timers.current.forEach(clearTimeout);
       cancelVoice();
     },
-    []
+    [],
   );
 
   const question = questions[index];
@@ -92,7 +100,9 @@ export default function PlayScreen({ onHome }: Props) {
 
   const onBeltLayout = (e: LayoutChangeEvent) => {
     const { width, height } = e.nativeEvent.layout;
-    setMeasured((m) => (m.w === width && m.h === height ? m : { w: width, h: height }));
+    setMeasured((m) =>
+      m.w === width && m.h === height ? m : { w: width, h: height },
+    );
   };
 
   const goNext = useCallback(() => {
@@ -118,7 +128,7 @@ export default function PlayScreen({ onHome }: Props) {
   const onPick = useCallback(
     (item: WordItem) => {
       if (locked || celebrating || done) return;
-      playSound('tap');
+      playSound("tap");
       if (item.word === answer.word) {
         // 正解: ベルトを止め、リビール ぽんっ → ⭐獲得（累計＋進捗ドット）→ 読み上げ「◯◯！」→ 次へ。
         // 再挑戦してからのクリアでも同じ⭐（獲得に条件差はつけない・DESIGN §14）。
@@ -126,7 +136,7 @@ export default function PlayScreen({ onHome }: Props) {
         setCelebrating(true);
         addStars(1);
         setStarsEarned((s) => s + 1);
-        playSound('star');
+        playSound("star");
         if (ttsRef.current) sayWord(answer, { enabled: true });
         later(() => {
           setCelebrating(false);
@@ -138,15 +148,15 @@ export default function PlayScreen({ onHome }: Props) {
         // やさしい合図（音）＋「あれれ」「おしい」を交互に声かけ（否定語なし・読み上げオン時のみ）。
         setShakeWord(item.word);
         setShakeNonce((n) => n + 1);
-        playSound('wrong');
+        playSound("wrong");
         if (ttsRef.current) sayWrongCheer({ enabled: true });
       }
     },
-    [locked, celebrating, done, answer, goNext, later]
+    [locked, celebrating, done, answer, goNext, later],
   );
 
   const speakAsk = () => {
-    playSound('tap');
+    playSound("tap");
     if (ttsRef.current) sayWord(answer, { enabled: true });
   };
 
@@ -154,12 +164,20 @@ export default function PlayScreen({ onHome }: Props) {
     <View style={styles.root}>
       {/* ヘッダー: おうち＋進捗ドット */}
       <View style={styles.header}>
-        <Pressable onPress={onHome} hitSlop={10} style={styles.homeBtn} accessibilityLabel="おうちへ">
+        <Pressable
+          onPress={onHome}
+          hitSlop={10}
+          style={styles.homeBtn}
+          accessibilityLabel="おうちへ"
+        >
           <Text style={styles.homeGlyph}>🏠</Text>
         </Pressable>
         <View style={styles.progress} testID="progress">
           {questions.map((_, i) => (
-            <ProgressStar key={i} state={i < starsEarned ? 'star' : i === index ? 'now' : 'off'} />
+            <ProgressStar
+              key={i}
+              state={i < starsEarned ? "star" : i === index ? "now" : "off"}
+            />
           ))}
         </View>
         <View style={styles.homeBtn} />
@@ -168,7 +186,15 @@ export default function PlayScreen({ onHome }: Props) {
       {/* 出題バー: 「◯◯ は どれ？」＋🔊（長い語は自前計算で縮小＝省略を出さない） */}
       <View style={styles.askBar}>
         <Text
-          style={[styles.askText, { fontSize: computeAskFontSize(`${answerLabel} は どれ？`, askTextW) }]}
+          style={[
+            styles.askText,
+            {
+              fontSize: computeAskFontSize(
+                `${answerLabel} は どれ？`,
+                askTextW,
+              ),
+            },
+          ]}
           numberOfLines={1}
           adjustsFontSizeToFit
           onLayout={(e) => {
@@ -179,7 +205,13 @@ export default function PlayScreen({ onHome }: Props) {
         >
           {answerLabel} は どれ？
         </Text>
-        <Pressable onPress={speakAsk} hitSlop={10} style={styles.speaker} accessibilityLabel="もういちど きく" testID="speak-btn">
+        <Pressable
+          onPress={speakAsk}
+          hitSlop={10}
+          style={styles.speaker}
+          accessibilityLabel="もういちど きく"
+          testID="speak-btn"
+        >
           <Text style={styles.speakerGlyph}>🔊</Text>
         </Pressable>
       </View>
@@ -203,7 +235,9 @@ export default function PlayScreen({ onHome }: Props) {
 
       {celebrating ? <Confetti /> : null}
       {celebrating ? <RevealCard item={answer} label={answerLabel} /> : null}
-      {done ? <ClearOverlay starCount={SET_SIZE} onReplay={newGame} onHome={onHome} /> : null}
+      {done ? (
+        <ClearOverlay starCount={SET_SIZE} onReplay={newGame} onHome={onHome} />
+      ) : null}
     </View>
   );
 }
@@ -214,29 +248,29 @@ const styles = StyleSheet.create({
   },
   header: {
     height: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   homeBtn: {
     width: 44,
     height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   homeGlyph: {
     fontSize: 28,
   },
   progress: {
-    flexDirection: 'row',
+    flexDirection: "row",
     columnGap: space.sm,
-    alignItems: 'center',
+    alignItems: "center",
   },
   askBar: {
     minHeight: 64,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: colors.askBar,
     borderRadius: radius.lg,
     borderWidth: 2,
@@ -248,15 +282,15 @@ const styles = StyleSheet.create({
   askText: {
     flex: 1,
     fontSize: font.title,
-    fontWeight: '900',
+    fontWeight: "900",
     color: colors.text,
   },
   speaker: {
     width: 52,
     height: 52,
     borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: colors.bg,
     marginLeft: space.sm,
   },
@@ -270,6 +304,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.beltBorder,
     marginVertical: space.sm,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
 });

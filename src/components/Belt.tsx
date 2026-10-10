@@ -8,10 +8,10 @@
 // - 誤答はその語のコピーだけ ぷるぷる（shakeNonce パターン）。ベルトは止めずに流れ続ける。
 // - itemSize はベルトの実測サイズ（beltW/beltH）から算出し、可視領域を絶対にはみ出さない。
 
-import React, { useEffect, useMemo, useRef } from 'react';
-import { Animated, Easing, Pressable, StyleSheet, View } from 'react-native';
-import { colors, radius } from '../theme';
-import { WordItem } from '../types';
+import React, { useEffect, useMemo, useRef } from "react";
+import { Animated, Easing, Pressable, StyleSheet, View } from "react-native";
+import { colors, radius } from "../theme";
+import { WordItem } from "../types";
 
 const SPEED = 55; // px/秒（DESIGN §8）
 
@@ -58,24 +58,57 @@ function BeltItem({
       prevNonce.current = shakeNonce;
       shake.setValue(0);
       Animated.sequence([
-        Animated.timing(shake, { toValue: 1, duration: 60, easing: Easing.linear, useNativeDriver: false }),
-        Animated.timing(shake, { toValue: -1, duration: 90, easing: Easing.linear, useNativeDriver: false }),
-        Animated.timing(shake, { toValue: 1, duration: 90, easing: Easing.linear, useNativeDriver: false }),
-        Animated.timing(shake, { toValue: -1, duration: 90, easing: Easing.linear, useNativeDriver: false }),
-        Animated.timing(shake, { toValue: 0, duration: 60, easing: Easing.linear, useNativeDriver: false }),
+        Animated.timing(shake, {
+          toValue: 1,
+          duration: 60,
+          easing: Easing.linear,
+          useNativeDriver: false,
+        }),
+        Animated.timing(shake, {
+          toValue: -1,
+          duration: 90,
+          easing: Easing.linear,
+          useNativeDriver: false,
+        }),
+        Animated.timing(shake, {
+          toValue: 1,
+          duration: 90,
+          easing: Easing.linear,
+          useNativeDriver: false,
+        }),
+        Animated.timing(shake, {
+          toValue: -1,
+          duration: 90,
+          easing: Easing.linear,
+          useNativeDriver: false,
+        }),
+        Animated.timing(shake, {
+          toValue: 0,
+          duration: 60,
+          easing: Easing.linear,
+          useNativeDriver: false,
+        }),
       ]).start();
     }
   }, [shakeActive, shakeNonce, shake]);
 
-  const translateX = shake.interpolate({ inputRange: [-1, 1], outputRange: [-7, 7] });
+  const translateX = shake.interpolate({
+    inputRange: [-1, 1],
+    outputRange: [-7, 7],
+  });
 
   return (
     <Pressable
       onPress={() => onPick(item)}
       accessibilityRole="button"
       accessibilityLabel={item.word}
-      testID={isAnswer ? 'belt-correct' : undefined}
-      style={{ width: cellW, height: beltH, alignItems: 'center', justifyContent: 'center' }}
+      testID={isAnswer ? "belt-correct" : undefined}
+      style={{
+        width: cellW,
+        height: beltH,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
     >
       <Animated.View
         style={[
@@ -87,7 +120,10 @@ function BeltItem({
           source={item.svg}
           resizeMode="contain"
           accessibilityLabel={item.word}
-          style={{ width: Math.round(itemSize * 0.84), height: Math.round(itemSize * 0.84) }}
+          style={{
+            width: Math.round(itemSize * 0.84),
+            height: Math.round(itemSize * 0.84),
+          }}
         />
       </Animated.View>
     </Pressable>
@@ -133,7 +169,7 @@ export default function Belt({
         duration: (unitWidth / SPEED) * 1000,
         easing: Easing.linear,
         useNativeDriver: false,
-      })
+      }),
     );
     anim.start();
     return () => anim.stop();
@@ -148,7 +184,7 @@ export default function Belt({
 
       <Animated.View
         style={{
-          flexDirection: 'row',
+          flexDirection: "row",
           width: trackWidth,
           height: beltH,
           transform: [{ translateX: tx }],
@@ -175,11 +211,11 @@ export default function Belt({
 const styles = StyleSheet.create({
   viewport: {
     flex: 1,
-    overflow: 'hidden',
-    justifyContent: 'center',
+    overflow: "hidden",
+    justifyContent: "center",
   },
   rail: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     height: 10,
@@ -191,9 +227,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 3,
     borderColor: colors.itemBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#00000040',
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#00000040",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.14,
     shadowRadius: 5,

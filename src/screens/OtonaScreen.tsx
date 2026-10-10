@@ -8,10 +8,17 @@
 // （ぴよぴよさんすうと同じ直し方）。
 // 「0に もどす」は ことばの中の表示だけを 0 にする。街へ渡す累計 kotoba.totalStars は残す（settings.ts）。
 
-import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { colors, font, radius, space } from '../theme';
-import BigButton from '../components/BigButton';
+import React, { useState } from "react";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { colors, font, radius, space } from "../theme";
+import BigButton from "../components/BigButton";
 import {
   ALL_CATEGORIES,
   getBgmOn,
@@ -23,18 +30,18 @@ import {
   setMoji,
   setTtsOn,
   toggleCategory,
-} from '../settings';
-import { CATEGORY_LABELS } from '../game/words';
-import { CategoryId, MojiMode } from '../types';
+} from "../settings";
+import { CATEGORY_LABELS } from "../game/words";
+import { CategoryId, MojiMode } from "../types";
 
 // もじ 3択トグルの並び（ラベルは各モードの文字体系で自己説明的にする）。
 const MOJI_OPTIONS: { id: MojiMode; label: string }[] = [
-  { id: 'hiragana', label: 'ひらがな' },
-  { id: 'katakana', label: 'カタカナ' },
-  { id: 'mazegaki', label: 'まぜがき' },
+  { id: "hiragana", label: "ひらがな" },
+  { id: "katakana", label: "カタカナ" },
+  { id: "mazegaki", label: "まぜがき" },
 ];
-import { playSound } from '../audio/sounds';
-import { setKotobaBgmOn } from '../audio/bgm';
+import { playSound } from "../audio/sounds";
+import { setKotobaBgmOn } from "../audio/bgm";
 
 interface Props {
   onBack: () => void;
@@ -51,7 +58,9 @@ const CAT_EMOJI_W = 38; // カテゴリの絵文字（30px）の幅＋ゆとり
 function optionInnerW(windowW: number, n: number): number {
   const frameW = Math.min(windowW, 480) - space.md * 2;
   const cardInner = frameW - CARD_PAD * 2 - 2;
-  return (cardInner - OPTION_GAP * (n - 1)) / n - OPTION_BORDER * 2 - OPTION_PAD * 2;
+  return (
+    (cardInner - OPTION_GAP * (n - 1)) / n - OPTION_BORDER * 2 - OPTION_PAD * 2
+  );
 }
 
 // 2つ並びの選択肢（する/しない・ながす/ながさない）の文字の大きさ。最長の「ながさない」（5字）が1行に収まる大きさ。
@@ -61,7 +70,10 @@ function optionFontSize(windowW: number): number {
 
 // カテゴリ（絵文字＋4字まで）の文字の大きさ。n 列の内側から絵文字と間（space.xs）を引いた幅に「くだもの」等の4字を収める。
 function catFontSizeFor(windowW: number, n: number): number {
-  return Math.min(font.body, Math.floor((optionInnerW(windowW, n) - CAT_EMOJI_W - space.xs) / 4.2));
+  return Math.min(
+    font.body,
+    Math.floor((optionInnerW(windowW, n) - CAT_EMOJI_W - space.xs) / 4.2),
+  );
 }
 
 // カテゴリの並び。2つ並び（2×2）で文字が CAT_MIN_FONT 以上になる幅ならそのまま、ならない狭い画面（320 幅など）は
@@ -101,32 +113,32 @@ export default function OtonaScreen({ onBack }: Props) {
   const [confirmReset, setConfirmReset] = useState(false); // 誤操作防止の2段階確認
 
   const onToggleCat = (id: CategoryId) => {
-    playSound('tap');
+    playSound("tap");
     setCats(toggleCategory(id));
   };
 
   // もじ表示の切替（ひらがな/カタカナ/まぜがき）。次のもんだいから反映（PlayScreen がマウント時に読む）。
   const onSetMoji = (mode: MojiMode) => {
-    playSound('tap');
+    playSound("tap");
     setMoji(mode); // 保存（kotoba.moji）
     setMojiState(mode);
   };
 
   const onToggleTts = (on: boolean) => {
-    playSound('tap');
+    playSound("tap");
     setTtsOn(on);
     setTts(on);
   };
 
   // BGM ながす/ながさない。タップ（ジェスチャ起点）なので ON で即再開できる。
   const onToggleBgm = (on: boolean) => {
-    playSound('tap');
+    playSound("tap");
     setKotobaBgmOn(on); // 保存（kotoba.bgm）＋エンジン ON/OFF（OFFは即フェード停止・ONは即再開）
     setBgm(on);
   };
 
   const onResetPress = () => {
-    playSound('tap');
+    playSound("tap");
     if (!confirmReset) {
       setConfirmReset(true); // 1回目は確認へ
       return;
@@ -160,17 +172,31 @@ export default function OtonaScreen({ onBack }: Props) {
                   accessibilityRole="button"
                   accessibilityState={{ selected: active }}
                   disabled={lastOne}
-                  style={[styles.cat, catWidth, active ? styles.catActive : styles.catIdle, lastOne && styles.catLocked]}
+                  style={[
+                    styles.cat,
+                    catWidth,
+                    active ? styles.catActive : styles.catIdle,
+                    lastOne && styles.catLocked,
+                  ]}
                 >
                   <Text style={styles.catEmoji}>{meta.emoji}</Text>
-                  <Text style={[styles.catText, catFont, active && styles.catTextActive]}>{meta.label}</Text>
+                  <Text
+                    style={[
+                      styles.catText,
+                      catFont,
+                      active && styles.catTextActive,
+                    ]}
+                  >
+                    {meta.label}
+                  </Text>
                   {active ? <Text style={styles.check}>✓</Text> : null}
                 </Pressable>
               );
             })}
           </View>
           <Text style={styles.note}>
-            オンにした なかまだけ でます。すくなくとも 1つは のこります。つぎのもんだいから かわります。
+            オンにした なかまだけ でます。すくなくとも 1つは
+            のこります。つぎのもんだいから かわります。
           </Text>
         </View>
 
@@ -186,10 +212,20 @@ export default function OtonaScreen({ onBack }: Props) {
                   onPress={() => onSetMoji(o.id)}
                   accessibilityRole="button"
                   accessibilityState={{ selected: active }}
-                  style={[styles.mojiOption, active ? styles.optionActive : styles.optionIdle]}
+                  style={[
+                    styles.mojiOption,
+                    active ? styles.optionActive : styles.optionIdle,
+                  ]}
                   testID={`moji-${o.id}`}
                 >
-                  <Text style={[styles.mojiOptionText, mojiFont, active && styles.optionTextActive]} numberOfLines={1}>
+                  <Text
+                    style={[
+                      styles.mojiOptionText,
+                      mojiFont,
+                      active && styles.optionTextActive,
+                    ]}
+                    numberOfLines={1}
+                  >
                     {o.label}
                   </Text>
                   {active ? <Text style={styles.mojiCheck}>✓</Text> : null}
@@ -198,8 +234,9 @@ export default function OtonaScreen({ onBack }: Props) {
             })}
           </View>
           <Text style={styles.note}>
-            みために だけ かわります。よみあげの こえは そのまま。「まぜがき」は バナナ・パンダ など
-            いつも カタカナで かく ことばだけ カタカナに します。つぎのもんだいから かわります。
+            みために だけ かわります。よみあげの こえは そのまま。「まぜがき」は
+            バナナ・パンダ など いつも カタカナで かく ことばだけ カタカナに
+            します。つぎのもんだいから かわります。
           </Text>
         </View>
 
@@ -211,23 +248,46 @@ export default function OtonaScreen({ onBack }: Props) {
               onPress={() => onToggleTts(true)}
               accessibilityRole="button"
               accessibilityState={{ selected: tts }}
-              style={[styles.option, tts ? styles.optionActive : styles.optionIdle]}
+              style={[
+                styles.option,
+                tts ? styles.optionActive : styles.optionIdle,
+              ]}
             >
-              <Text style={[styles.optionText, optionFont, tts && styles.optionTextActive]}>する</Text>
+              <Text
+                style={[
+                  styles.optionText,
+                  optionFont,
+                  tts && styles.optionTextActive,
+                ]}
+              >
+                する
+              </Text>
               {tts ? <Text style={styles.check}>✓</Text> : null}
             </Pressable>
             <Pressable
               onPress={() => onToggleTts(false)}
               accessibilityRole="button"
               accessibilityState={{ selected: !tts }}
-              style={[styles.option, !tts ? styles.optionActive : styles.optionIdle]}
+              style={[
+                styles.option,
+                !tts ? styles.optionActive : styles.optionIdle,
+              ]}
             >
-              <Text style={[styles.optionText, optionFont, !tts && styles.optionTextActive]}>しない</Text>
+              <Text
+                style={[
+                  styles.optionText,
+                  optionFont,
+                  !tts && styles.optionTextActive,
+                ]}
+              >
+                しない
+              </Text>
               {!tts ? <Text style={styles.check}>✓</Text> : null}
             </Pressable>
           </View>
           <Text style={styles.note}>
-            「する」だと ことばを こえで よみます。おとが つかえない ときも あそべます。
+            「する」だと ことばを こえで よみます。おとが つかえない ときも
+            あそべます。
           </Text>
         </View>
 
@@ -239,25 +299,48 @@ export default function OtonaScreen({ onBack }: Props) {
               onPress={() => onToggleBgm(true)}
               accessibilityRole="button"
               accessibilityState={{ selected: bgm }}
-              style={[styles.option, bgm ? styles.optionActive : styles.optionIdle]}
+              style={[
+                styles.option,
+                bgm ? styles.optionActive : styles.optionIdle,
+              ]}
               testID="bgm-on"
             >
-              <Text style={[styles.optionText, optionFont, bgm && styles.optionTextActive]}>ながす</Text>
+              <Text
+                style={[
+                  styles.optionText,
+                  optionFont,
+                  bgm && styles.optionTextActive,
+                ]}
+              >
+                ながす
+              </Text>
               {bgm ? <Text style={styles.check}>✓</Text> : null}
             </Pressable>
             <Pressable
               onPress={() => onToggleBgm(false)}
               accessibilityRole="button"
               accessibilityState={{ selected: !bgm }}
-              style={[styles.option, !bgm ? styles.optionActive : styles.optionIdle]}
+              style={[
+                styles.option,
+                !bgm ? styles.optionActive : styles.optionIdle,
+              ]}
               testID="bgm-off"
             >
-              <Text style={[styles.optionText, optionFont, !bgm && styles.optionTextActive]}>ながさない</Text>
+              <Text
+                style={[
+                  styles.optionText,
+                  optionFont,
+                  !bgm && styles.optionTextActive,
+                ]}
+              >
+                ながさない
+              </Text>
               {!bgm ? <Text style={styles.check}>✓</Text> : null}
             </Pressable>
           </View>
           <Text style={styles.note}>
-            やさしい オルゴールの きょくが ながれます。こえの あいだは そっと ちいさくなります。
+            やさしい オルゴールの きょくが ながれます。こえの あいだは そっと
+            ちいさくなります。
           </Text>
         </View>
 
@@ -269,11 +352,15 @@ export default function OtonaScreen({ onBack }: Props) {
             {confirmReset ? (
               <Pressable
                 onPress={() => {
-                  playSound('tap');
+                  playSound("tap");
                   setConfirmReset(false);
                 }}
                 accessibilityRole="button"
-                style={[styles.resetBtn, styles.resetBtnGrow, styles.resetCancel]}
+                style={[
+                  styles.resetBtn,
+                  styles.resetBtnGrow,
+                  styles.resetCancel,
+                ]}
               >
                 <Text style={styles.resetCancelText}>やめる</Text>
               </Pressable>
@@ -284,17 +371,24 @@ export default function OtonaScreen({ onBack }: Props) {
               disabled={stars === 0 && !confirmReset}
               style={[
                 styles.resetBtn,
-                confirmReset ? [styles.resetBtnGrow, styles.resetConfirm] : styles.resetIdle,
+                confirmReset
+                  ? [styles.resetBtnGrow, styles.resetConfirm]
+                  : styles.resetIdle,
                 stars === 0 && !confirmReset ? styles.resetDisabled : null,
               ]}
             >
-              <Text style={confirmReset ? styles.resetConfirmText : styles.resetIdleText}>
-                {confirmReset ? 'ほんとうに 0に する' : '0に もどす'}
+              <Text
+                style={
+                  confirmReset ? styles.resetConfirmText : styles.resetIdleText
+                }
+              >
+                {confirmReset ? "ほんとうに 0に する" : "0に もどす"}
               </Text>
             </Pressable>
           </View>
           <Text style={styles.note}>
-            あつめた ほし は へりません。ここでだけ 0に もどせます。0に しても、まち（ぴよぴよランド）の ⭐ は へりません。
+            あつめた ほし は へりません。ここでだけ 0に もどせます。0に
+            しても、まち（ぴよぴよランド）の ⭐ は へりません。
           </Text>
         </View>
 
@@ -304,7 +398,12 @@ export default function OtonaScreen({ onBack }: Props) {
 
       {/* 「もどる」はスクロールの外に固定し、背の低い画面でも常に押せるようにする（DESIGN §8）。 */}
       <View style={styles.backWrap}>
-        <BigButton emoji="◀️" label="もどる" onPress={onBack} color={colors.button} />
+        <BigButton
+          emoji="◀️"
+          label="もどる"
+          onPress={onBack}
+          color={colors.button}
+        />
       </View>
     </View>
   );
@@ -326,7 +425,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: font.title,
-    fontWeight: '800',
+    fontWeight: "800",
     color: colors.text,
     marginBottom: space.lg,
   },
@@ -342,31 +441,31 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: font.body,
-    fontWeight: '800',
+    fontWeight: "800",
     color: colors.text,
     marginBottom: space.md,
   },
   // カテゴリは2×2グリッド（狭い画面では1列＝catOneCol）
   catGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     columnGap: OPTION_GAP,
     rowGap: OPTION_GAP,
   },
   cat: {
-    width: '46%',
+    width: "46%",
     flexGrow: 1,
     minHeight: 72,
     borderRadius: radius.md,
     borderWidth: OPTION_BORDER,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     columnGap: space.xs,
     paddingHorizontal: OPTION_PAD,
   },
   catOneCol: {
-    width: '100%',
+    width: "100%",
   },
   catIdle: {
     backgroundColor: colors.surface,
@@ -383,7 +482,7 @@ const styles = StyleSheet.create({
     fontSize: 30,
   },
   catText: {
-    fontWeight: '900',
+    fontWeight: "900",
     color: colors.text,
   },
   catTextActive: {
@@ -391,7 +490,7 @@ const styles = StyleSheet.create({
   },
   // もじは3択なので幅がきつい。列を詰め、各ボタンは縦積み（ラベル＋✓）で狭くても収める。
   mojiOptions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     columnGap: MOJI_GAP,
   },
   mojiOption: {
@@ -399,9 +498,9 @@ const styles = StyleSheet.create({
     minHeight: 72,
     borderRadius: radius.md,
     borderWidth: OPTION_BORDER,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'column',
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "column",
     rowGap: space.xs,
     // 左右の余白は取らない（4字ぶんの幅を文字に回す。文字は中央そろえなので見た目の余白は残る）。
     paddingHorizontal: 0,
@@ -410,16 +509,16 @@ const styles = StyleSheet.create({
     // 3択で幅がきついので font.body(20) より一段小さく。枠の幅から mojiFontSize で決め、狭い画面でも
     // 4文字（ひらがな/カタカナ/まぜがき）を省略せず表示する。
     fontSize: MOJI_FONT,
-    fontWeight: '900',
+    fontWeight: "900",
     color: colors.text,
   },
   mojiCheck: {
     fontSize: font.small,
     color: colors.white,
-    fontWeight: '900',
+    fontWeight: "900",
   },
   options: {
-    flexDirection: 'row',
+    flexDirection: "row",
     columnGap: OPTION_GAP,
   },
   option: {
@@ -428,8 +527,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: OPTION_BORDER,
     paddingHorizontal: OPTION_PAD,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   optionIdle: {
     backgroundColor: colors.surface,
@@ -440,7 +539,7 @@ const styles = StyleSheet.create({
     borderColor: colors.playPressed,
   },
   optionText: {
-    fontWeight: '900',
+    fontWeight: "900",
     color: colors.text,
   },
   optionTextActive: {
@@ -448,12 +547,12 @@ const styles = StyleSheet.create({
   },
   check: {
     // 選択中の印。文字の横に並べると狭い画面で文字が折り返すので、右上に重ねる。
-    position: 'absolute',
+    position: "absolute",
     top: 2,
     right: 8,
     fontSize: font.small,
     color: colors.white,
-    fontWeight: '900',
+    fontWeight: "900",
   },
   note: {
     fontSize: font.small,
@@ -464,18 +563,18 @@ const styles = StyleSheet.create({
   credit: {
     fontSize: font.small,
     color: colors.subtext,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: space.lg,
   },
   starTotal: {
     fontSize: font.huge,
-    fontWeight: '900',
+    fontWeight: "900",
     color: colors.text,
   },
   resetRow: {
     // 確認中は「やめる」「ほんとうに 0に する」が横に入りきらない幅で2段に折り返す（はみ出さない）。
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     columnGap: space.sm,
     rowGap: space.sm,
     marginTop: space.md,
@@ -487,8 +586,8 @@ const styles = StyleSheet.create({
     minHeight: 52,
     borderRadius: radius.md,
     paddingHorizontal: space.md,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 2,
   },
   resetIdle: {
@@ -497,7 +596,7 @@ const styles = StyleSheet.create({
   },
   resetIdleText: {
     fontSize: font.body,
-    fontWeight: '800',
+    fontWeight: "800",
     color: colors.subtext,
   },
   resetConfirm: {
@@ -506,7 +605,7 @@ const styles = StyleSheet.create({
   },
   resetConfirmText: {
     fontSize: font.body,
-    fontWeight: '900',
+    fontWeight: "900",
     color: colors.white,
   },
   resetCancel: {
@@ -515,7 +614,7 @@ const styles = StyleSheet.create({
   },
   resetCancelText: {
     fontSize: font.body,
-    fontWeight: '800',
+    fontWeight: "800",
     color: colors.text,
   },
   resetDisabled: {

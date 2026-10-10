@@ -9,11 +9,16 @@
 //   ・全 API は AudioContext 非対応・localStorage 例外でも無害（クラッシュしない）。
 //   ・自動再生制限を守るため startBgm は必ずユーザー操作のハンドラ内から呼ぶ。
 
-import { startBgm, setBgmEnabled, configureBgm, getBgmState } from './bgm/engine';
-import { getSharedAudioContext } from './sounds';
-import { getBgmOn, setBgmOn } from '../settings';
+import {
+  startBgm,
+  setBgmEnabled,
+  configureBgm,
+  getBgmState,
+} from "./bgm/engine";
+import { getSharedAudioContext } from "./sounds";
+import { getBgmOn, setBgmOn } from "../settings";
 
-const SONG = 'kotoba' as const;
+const SONG = "kotoba" as const;
 
 let configured = false;
 function ensureConfigured(): void {
@@ -60,8 +65,11 @@ export { getBgmState };
 // 書き出した本番（expo export）には入れない（本番の globalThis に内部状態を公開しない）。
 if (__DEV__) {
   try {
-    (globalThis as unknown as { __kotobaBgm?: { getState: () => ReturnType<typeof getBgmState> } }).__kotobaBgm =
-      { getState: () => getBgmState() };
+    (
+      globalThis as unknown as {
+        __kotobaBgm?: { getState: () => ReturnType<typeof getBgmState> };
+      }
+    ).__kotobaBgm = { getState: () => getBgmState() };
   } catch {
     // 無害
   }
