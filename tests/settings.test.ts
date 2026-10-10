@@ -1,17 +1,19 @@
 // 端末内の保存（src/settings.ts）の規則と保存キーを、現状のまま固定する（DESIGN §9・§14）。
 //   ・キーはすべて `kotoba.` で始まる 6 つだけ（他アプリ・街の meiro.* sansu.* land.* は読み書きしない）
 //   ・累計 kotoba.totalStars は減らさない / 控え kotoba.starsResetAt は「0に もどす」の時点の累計
-//     （控えが累計より大きければ捨てる）/ 有効カテゴリは ALL の並び・最低 1 つ / 壊れた値は既定
+//     （控えが累計より大きければ捨てる）/ 有効カテゴリは正規の並び（やさい・くだもの・どうぶつ・のりもの）・最低 1 つ / 壊れた値は既定
 // localStorage は偽物に差し替える。settings.ts は読んだ値を覚えるので、テストごとに読み直す（tests/helpers.ts）。
 
 import assert from "node:assert/strict";
 import { describe, test, type TestContext } from "node:test";
 import type { CategoryId, MojiMode } from "../src/types";
 import {
+  CATEGORY_IDS,
   FakeStorage,
   freshSettings,
   installLocalStorage,
   type FakeStorageOptions,
+  type Settings,
 } from "./helpers";
 import { Platform } from "./stubs/react-native";
 
@@ -23,8 +25,6 @@ const KEY = {
   tts: "kotoba.tts",
   bgm: "kotoba.bgm",
 };
-
-const ALL: CategoryId[] = ["yasai", "kudamono", "doubutsu", "norimono"];
 
 // 偽の localStorage を入れて、白紙の settings を読み込む。終わると元に戻る。
 async function setup(
@@ -170,12 +170,12 @@ describe("あつめた ほし（kotoba.totalStars・kotoba.starsResetAt）", () 
 });
 
 describe("有効カテゴリ（kotoba.cats）", () => {
-  test("保存が空なら、全 4 カテゴリが ALL の並びで有効", async (t) => {
+  test("保存が空なら、全 4 カテゴリが正規の並びで有効", async (t) => {
     const { settings } = await setup(t);
-    assert.deepEqual(settings.getCategories(), ALL);
+    assert.deepEqual(settings.getCategories(), CATEGORY_IDS);
   });
 
-  test("保存された並びは ALL の並びに揃える", async (t) => {
+  test("保存された並びは 正規の並びに揃える", async (t) => {
     const { settings } = await setup(t, {
       [KEY.cats]: JSON.stringify(["norimono", "yasai"]),
     });
@@ -201,12 +201,12 @@ describe("有効カテゴリ（kotoba.cats）", () => {
   ]) {
     test(`壊れた保存値 ${JSON.stringify(stored)} は全カテゴリ（読むだけでは書き換えない）`, async (t) => {
       const { storage, settings } = await setup(t, { [KEY.cats]: stored });
-      assert.deepEqual(settings.getCategories(), ALL);
+      assert.deepEqual(settings.getCategories(), CATEGORY_IDS);
       assert.deepEqual(storage.writes(), []);
     });
   }
 
-  test("setCategories は ALL の並びに揃えて返し、JSON の配列で保存する", async (t) => {
+  test("setCategories は 正規の並びに揃えて返し、JSON の配列で保存する", async (t) => {
     const { storage, settings } = await setup(t);
     assert.deepEqual(settings.setCategories(["doubutsu", "yasai"]), [
       "yasai",
@@ -220,12 +220,12 @@ describe("有効カテゴリ（kotoba.cats）", () => {
     const { storage, settings } = await setup(t, {
       [KEY.cats]: '["kudamono"]',
     });
-    assert.deepEqual(settings.setCategories([]), ALL);
-    assert.equal(storage.snapshot()[KEY.cats], JSON.stringify(ALL));
-    assert.deepEqual(settings.getCategories(), ALL);
+    assert.deepEqual(settings.setCategories([]), CATEGORY_IDS);
+    assert.equal(storage.snapshot()[KEY.cats], JSON.stringify(CATEGORY_IDS));
+    assert.deepEqual(settings.getCategories(), CATEGORY_IDS);
   });
 
-  test("toggleCategory は 1 つずつオン/オフでき、戻すと ALL の並びに戻る", async (t) => {
+  test("toggleCategory は 1 つずつオン/オフでき、戻すと正規の並びに戻る", async (t) => {
     const { storage, settings } = await setup(t);
     assert.deepEqual(settings.toggleCategory("kudamono"), [
       "yasai",
@@ -236,8 +236,8 @@ describe("有効カテゴリ（kotoba.cats）", () => {
       storage.snapshot()[KEY.cats],
       '["yasai","doubutsu","norimono"]',
     );
-    assert.deepEqual(settings.toggleCategory("kudamono"), ALL);
-    assert.equal(storage.snapshot()[KEY.cats], JSON.stringify(ALL));
+    assert.deepEqual(settings.toggleCategory("kudamono"), CATEGORY_IDS);
+    assert.equal(storage.snapshot()[KEY.cats], JSON.stringify(CATEGORY_IDS));
   });
 
   test("最後の 1 つはオフにできない（最低 1 つは残る）", async (t) => {
@@ -257,19 +257,17 @@ const SWITCHES = [
     label: "よみあげ",
     key: KEY.tts,
     other: KEY.bgm,
-    get: (s: Awaited<ReturnType<typeof freshSettings>>) => s.getTtsOn(),
-    set: (s: Awaited<ReturnType<typeof freshSettings>>, on: boolean) =>
-      s.setTtsOn(on),
-    getOther: (s: Awaited<ReturnType<typeof freshSettings>>) => s.getBgmOn(),
+    get: (s: Settings) => s.getTtsOn(),
+    set: (s: Settings, on: boolean) => s.setTtsOn(on),
+    getOther: (s: Settings) => s.getBgmOn(),
   },
   {
     label: "BGM",
     key: KEY.bgm,
     other: KEY.tts,
-    get: (s: Awaited<ReturnType<typeof freshSettings>>) => s.getBgmOn(),
-    set: (s: Awaited<ReturnType<typeof freshSettings>>, on: boolean) =>
-      s.setBgmOn(on),
-    getOther: (s: Awaited<ReturnType<typeof freshSettings>>) => s.getTtsOn(),
+    get: (s: Settings) => s.getBgmOn(),
+    set: (s: Settings, on: boolean) => s.setBgmOn(on),
+    getOther: (s: Settings) => s.getTtsOn(),
   },
 ];
 
@@ -408,7 +406,7 @@ describe("保存できない・壊れた環境でも落ちない", () => {
     const { settings } = await setup(t, {}, { failReads: true });
     assert.equal(settings.getTotalStars(), 0);
     assert.equal(settings.getShownStars(), 0);
-    assert.deepEqual(settings.getCategories(), ALL);
+    assert.deepEqual(settings.getCategories(), CATEGORY_IDS);
     assert.equal(settings.getTtsOn(), true);
     assert.equal(settings.getBgmOn(), true);
     assert.equal(settings.getMoji(), "hiragana");
@@ -450,7 +448,7 @@ describe("保存できない・壊れた環境でも落ちない", () => {
     );
     const settings = await freshSettings();
     assert.equal(settings.getTotalStars(), 0);
-    assert.deepEqual(settings.getCategories(), ALL);
+    assert.deepEqual(settings.getCategories(), CATEGORY_IDS);
     assert.equal(settings.addStars(), 1);
     settings.setTtsOn(false);
     assert.equal(settings.getTtsOn(), false);

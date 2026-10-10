@@ -11,16 +11,24 @@ import { describe, test } from "node:test";
 import { generateQuestion, generateSet } from "../src/game/quiz";
 import { WORDS } from "../src/game/words";
 import type { CategoryId, Question } from "../src/types";
-import { withSeed } from "./helpers";
+import { CATEGORY_IDS, withSeed } from "./helpers";
 
-const CATEGORIES: CategoryId[] = ["yasai", "kudamono", "doubutsu", "norimono"];
-
-// 有効カテゴリの空でない組み合わせ 15 通り（2^4 - 1）。各組み合わせは CATEGORIES の並びのまま。
+// 有効カテゴリの空でない組み合わせ 15 通り（2^4 - 1）。各組み合わせは CATEGORY_IDS の並びのまま。
 const COMBOS: CategoryId[][] = Array.from({ length: 15 }, (_, n) =>
-  CATEGORIES.filter((_cat, bit) => ((n + 1) >> bit) & 1),
+  CATEGORY_IDS.filter((_cat, bit) => ((n + 1) >> bit) & 1),
 );
 
 const ROUNDS = 300; // 組み合わせごとに回す問題数
+
+// 見た目が紛らわしい 🍎りんご（くだもの）と 🍅とまと（やさい）。
+const RINGO = "🍎";
+const TOMATO = "🍅";
+const mixesRingoAndTomato = (q: Question): boolean => {
+  const emojis = q.choices.map((c) => c.emoji);
+  return emojis.includes(RINGO) && emojis.includes(TOMATO);
+};
+
+const label = (cats: CategoryId[]): string => cats.join("+");
 
 // 型の外の値（知らない id）を渡すテスト用。
 const unsafeCats = (...ids: string[]): CategoryId[] => ids as CategoryId[];
@@ -51,11 +59,7 @@ function checkQuestion(q: Question, active: CategoryId[], where: string): void {
       `${where}: 同じカテゴリが 2 語`,
     );
   }
-  const emojis = q.choices.map((c) => c.emoji);
-  assert.ok(
-    !(emojis.includes("🍎") && emojis.includes("🍅")),
-    `${where}: 🍎と🍅が同じ問題に並んだ`,
-  );
+  assert.ok(!mixesRingoAndTomato(q), `${where}: 🍎と🍅が同じ問題に並んだ`);
 }
 
 describe("generateQuestion: 有効カテゴリの全組み合わせ", () => {
@@ -77,7 +81,7 @@ describe("generateQuestion: 有効カテゴリの全組み合わせ", () => {
 
   test("有効 1 カテゴリでは、4 カテゴリのどれでも同カテゴリの 4 語になる", () => {
     withSeed(2000, () => {
-      for (const cat of CATEGORIES) {
+      for (const cat of CATEGORY_IDS) {
         for (let i = 0; i < 50; i++) {
           const q = generateQuestion([cat]);
           assert.equal(q.choices.length, 4, cat);
@@ -96,7 +100,7 @@ describe("generateQuestion: 偏りと紛らわしさ", () => {
     const seen = new Set<string>();
     withSeed(3000, () => {
       for (let i = 0; i < 4000; i++) {
-        seen.add(generateQuestion(CATEGORIES).answer.id);
+        seen.add(generateQuestion(CATEGORY_IDS).answer.id);
       }
     });
     assert.equal(seen.size, WORDS.length);
@@ -106,7 +110,7 @@ describe("generateQuestion: 偏りと紛らわしさ", () => {
     const counts = [0, 0, 0, 0];
     withSeed(3001, () => {
       for (let i = 0; i < 2000; i++) {
-        const q = generateQuestion(CATEGORIES);
+        const q = generateQuestion(CATEGORY_IDS);
         counts[q.choices.indexOf(q.answer)] += 1;
       }
     });
@@ -126,12 +130,11 @@ describe("generateQuestion: 偏りと紛らわしさ", () => {
       for (const cats of combos) {
         for (let i = 0; i < 1000; i++) {
           const q = generateQuestion(cats);
-          if (q.answer.emoji === "🍎") ringoAnswers += 1;
-          if (q.answer.emoji === "🍅") tomatoAnswers += 1;
-          const emojis = q.choices.map((c) => c.emoji);
+          if (q.answer.emoji === RINGO) ringoAnswers += 1;
+          if (q.answer.emoji === TOMATO) tomatoAnswers += 1;
           assert.ok(
-            !(emojis.includes("🍎") && emojis.includes("🍅")),
-            `${cats.join("+")} ${i + 1} 問目: ${emojis.join("")}`,
+            !mixesRingoAndTomato(q),
+            `${label(cats)} ${i + 1} 問目: ${q.choices.map((c) => c.emoji).join("")}`,
           );
         }
       }
@@ -150,7 +153,7 @@ describe("generateQuestion: 偏りと紛らわしさ", () => {
   test("同じ種なら同じ出題になる（Math.random だけに頼る）", () => {
     const ids = (seed: number) =>
       withSeed(seed, () =>
-        generateSet(CATEGORIES).map((q) => q.choices.map((c) => c.id)),
+        generateSet(CATEGORY_IDS).map((q) => q.choices.map((c) => c.id)),
       );
     assert.deepEqual(ids(42), ids(42));
     assert.notDeepEqual(ids(42), ids(43));
@@ -164,7 +167,7 @@ describe("generateQuestion: avoidWord", () => {
         for (const w of WORDS) {
           for (let i = 0; i < 5; i++) {
             const q = generateQuestion(cats, w.word);
-            assert.notEqual(q.answer.word, w.word, `${cats.join("+")} ${w.id}`);
+            assert.notEqual(q.answer.word, w.word, `${label(cats)} ${w.id}`);
           }
         }
       }
@@ -175,9 +178,9 @@ describe("generateQuestion: avoidWord", () => {
 describe("generateSet", () => {
   test("既定は 5 問。数を渡せる", () => {
     withSeed(5000, () => {
-      assert.equal(generateSet(CATEGORIES).length, 5);
-      assert.equal(generateSet(CATEGORIES, 3).length, 3);
-      assert.equal(generateSet(CATEGORIES, 0).length, 0);
+      assert.equal(generateSet(CATEGORY_IDS).length, 5);
+      assert.equal(generateSet(CATEGORY_IDS, 3).length, 3);
+      assert.equal(generateSet(CATEGORY_IDS, 0).length, 0);
     });
   });
 
@@ -191,13 +194,13 @@ describe("generateSet", () => {
             checkQuestion(
               q,
               cats,
-              `${cats.join("+")} セット${n + 1} ${i + 1} 問目`,
+              `${label(cats)} セット${n + 1} ${i + 1} 問目`,
             );
             if (i > 0) {
               assert.notEqual(
                 q.answer.word,
                 set[i - 1].answer.word,
-                `${cats.join("+")} セット${n + 1}: ${i} 問目と ${i + 1} 問目の正解が同じ`,
+                `${label(cats)} セット${n + 1}: ${i} 問目と ${i + 1} 問目の正解が同じ`,
               );
             }
           });
@@ -210,14 +213,12 @@ describe("generateSet", () => {
 describe("generateQuestion: 有効カテゴリの正規化（入口）", () => {
   // 返ってきた選択肢のカテゴリを、並びに関係なく比べる。
   const categoriesOf = (q: Question) => q.choices.map((c) => c.category).sort();
+  const SORTED_IDS = [...CATEGORY_IDS].sort();
 
   test("空なら全カテゴリ扱い（4 択・4 カテゴリが 1 語ずつ）", () => {
     withSeed(6000, () => {
       for (let i = 0; i < 50; i++) {
-        assert.deepEqual(
-          categoriesOf(generateQuestion([])),
-          [...CATEGORIES].sort(),
-        );
+        assert.deepEqual(categoriesOf(generateQuestion([])), SORTED_IDS);
       }
     });
   });
@@ -237,7 +238,7 @@ describe("generateQuestion: 有効カテゴリの正規化（入口）", () => {
       for (let i = 0; i < 50; i++) {
         assert.deepEqual(
           categoriesOf(generateQuestion(unsafeCats("bogus"))),
-          [...CATEGORIES].sort(),
+          SORTED_IDS,
         );
         const q = generateQuestion(unsafeCats("bogus", "kudamono"));
         assert.equal(q.choices.length, 4);

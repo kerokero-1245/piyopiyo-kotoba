@@ -15,19 +15,19 @@ import { ROOT, assetPath } from "./helpers";
 
 const PHRASE_CLIPS = ["p_arere", "p_oshii", "p_seikai", "p_title"];
 
+// 40 語それぞれの単語クリップ（<id>）と出題文クリップ（ask_<id>）。
+const WORD_CLIP_NAMES = WORDS.flatMap((w) => [w.id, `ask_${w.id}`]);
+
 describe("クリップ表（CLIP_URLS）", () => {
   test("84 個: 単語 40 + 出題文 40 + 定型句 4。語に対するクリップの欠けは 0", () => {
     assert.equal(Object.keys(CLIP_URLS).length, 84);
-    const missing = WORDS.flatMap((w) => [w.id, `ask_${w.id}`]).filter(
-      (name) => !hasClip(name),
-    );
+    const missing = WORD_CLIP_NAMES.filter((name) => !hasClip(name));
     assert.deepEqual(missing, [], "表に無いクリップ");
   });
 
   test("語に属さないクリップは定型句の 4 つだけ", () => {
-    const wordClips = new Set(WORDS.flatMap((w) => [w.id, `ask_${w.id}`]));
     const others = Object.keys(CLIP_URLS).filter(
-      (name) => !wordClips.has(name),
+      (name) => !WORD_CLIP_NAMES.includes(name),
     );
     assert.deepEqual(others.sort(), PHRASE_CLIPS);
   });

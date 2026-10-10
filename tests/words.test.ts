@@ -14,14 +14,7 @@ import {
   wordsByCategory,
 } from "../src/game/words";
 import type { CategoryId, MojiMode } from "../src/types";
-import { ROOT, assetPath } from "./helpers";
-
-const CATEGORY_IDS: CategoryId[] = [
-  "yasai",
-  "kudamono",
-  "doubutsu",
-  "norimono",
-];
+import { CATEGORY_IDS, ROOT, assetPath } from "./helpers";
 
 type Row = readonly [
   id: string,

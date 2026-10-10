@@ -1,9 +1,18 @@
 // テストの共通の道具: repo のルート・種つき乱数・偽の localStorage・settings.ts の読み直し。
 
 import path from "node:path";
+import type { CategoryId } from "../src/types";
 
 // repo のルート（assets/ を実際に開くのに使う）。
 export const ROOT = path.resolve(import.meta.dirname, "..");
+
+// 4 カテゴリの id（DESIGN §3 の並び）。出題・語データ・保存のテストが期待する値で、src の定数には頼らない。
+export const CATEGORY_IDS: CategoryId[] = [
+  "yasai",
+  "kudamono",
+  "doubutsu",
+  "norimono",
+];
 
 // 資産（svg・音声）の require は、テストでは「資産ファイルの絶対パス」の文字列になる（tests/register.mjs）。
 export function assetPath(value: unknown): string {
@@ -109,12 +118,9 @@ export function installLocalStorage(
 // ── settings.ts の読み直し ───────────────────────────────────
 // settings.ts は読んだ値をモジュールの中に覚える（キャッシュ）。テストごとに白紙で始めるため、
 // `?fresh=N` を付けて別のインスタンスとして読み込む（tests/register.mjs が末尾をそのまま通す）。
+export type Settings = typeof import("../src/settings");
 let freshCount = 0;
-export async function freshSettings(): Promise<
-  typeof import("../src/settings")
-> {
+export async function freshSettings(): Promise<Settings> {
   freshCount += 1;
-  return (await import(
-    `../src/settings.ts?fresh=${freshCount}`
-  )) as typeof import("../src/settings");
+  return (await import(`../src/settings.ts?fresh=${freshCount}`)) as Settings;
 }
