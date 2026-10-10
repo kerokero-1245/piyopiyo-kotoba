@@ -63,6 +63,7 @@ npm start            # Expo を起動 → ターミナルで w を押すと Web 
 - `i` / `a` … iOS シミュレータ / Android エミュレータ（任意）
 
 ショートカット: `npm run web`。型の確認は `npm run typecheck`（`tsc --noEmit`）。
+テストは `npm test`（Node 標準の `node --test`。`tests/register.mjs` が .ts/.tsx の読み込みと react-native・素材の差し替えを受け持つので、依存は増えない）。
 
 ### Web ビルド（配布用の静的サイト書き出し）
 
