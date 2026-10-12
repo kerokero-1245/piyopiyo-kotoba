@@ -190,6 +190,7 @@ export default function ClearOverlay({ starCount, onReplay, onHome }: Props) {
       startDelay + starCount * stepMs + 140,
     );
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- timers.current は push するだけで差し替えない（常に同じ配列）。lint 導入では挙動を変えないので直さない
     return () => timers.current.forEach(clearTimeout);
     // マウント時のみ（done で1回だけ表示される）。
     // eslint-disable-next-line react-hooks/exhaustive-deps

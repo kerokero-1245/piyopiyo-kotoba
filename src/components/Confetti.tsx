@@ -94,6 +94,7 @@ export default function Confetti({ count = 18 }: { count?: number }) {
   const specs = useMemo<PieceSpec[]>(() => {
     if (width <= 0) return [];
     const palette = colors.confetti;
+    /* eslint-disable react-hooks/purity -- 紙吹雪の小片を描画中（useMemo の中）の乱数で決める作り。lint 導入では挙動を変えないので直さない */
     return Array.from({ length: count }, (_, i) => {
       const size = 10 + Math.random() * 10;
       // 小片の左端は inset..(枠の幅−大きさ−inset)。inset は回転で角が出る分。左右の揺れ（drift）も同じ範囲に収める。
@@ -115,6 +116,7 @@ export default function Confetti({ count = 18 }: { count?: number }) {
         spin: 360 + Math.random() * 360,
       };
     });
+    /* eslint-enable react-hooks/purity */
   }, [count, width]);
 
   return (

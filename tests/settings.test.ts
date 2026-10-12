@@ -6,7 +6,7 @@
 
 import assert from "node:assert/strict";
 import { describe, test, type TestContext } from "node:test";
-import type { CategoryId, MojiMode } from "../src/types";
+import type { MojiMode } from "../src/types";
 import {
   CATEGORY_IDS,
   FakeStorage,

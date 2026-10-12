@@ -14,7 +14,7 @@ import { ALL_CATEGORIES } from "../settings";
 
 // 見た目が紛らわしい絵文字ペア（1問に同居させない）。emoji の組で持つ。
 // 現状は 🍎りんご(くだもの) と 🍅とまと(やさい) の赤丸ペアのみ。増やすときはここに足す。
-const CONFUSABLE: ReadonlyArray<readonly [string, string]> = [["🍎", "🍅"]];
+const CONFUSABLE: readonly (readonly [string, string])[] = [["🍎", "🍅"]];
 
 function confusable(a: string, b: string): boolean {
   return CONFUSABLE.some(

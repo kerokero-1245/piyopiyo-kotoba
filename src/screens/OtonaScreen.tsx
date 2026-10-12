@@ -33,6 +33,8 @@ import {
 } from "../settings";
 import { CATEGORY_LABELS } from "../game/words";
 import { CategoryId, MojiMode } from "../types";
+import { playSound } from "../audio/sounds";
+import { setKotobaBgmOn } from "../audio/bgm";
 
 // もじ 3択トグルの並び（ラベルは各モードの文字体系で自己説明的にする）。
 const MOJI_OPTIONS: { id: MojiMode; label: string }[] = [
@@ -40,8 +42,6 @@ const MOJI_OPTIONS: { id: MojiMode; label: string }[] = [
   { id: "katakana", label: "カタカナ" },
   { id: "mazegaki", label: "まぜがき" },
 ];
-import { playSound } from "../audio/sounds";
-import { setKotobaBgmOn } from "../audio/bgm";
 
 interface Props {
   onBack: () => void;
