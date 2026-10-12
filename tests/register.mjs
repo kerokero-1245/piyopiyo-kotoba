@@ -17,9 +17,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 if (typeof nodeModule.registerHooks !== "function") {
-  throw new Error(
-    "module.registerHooks が無い。Node 22.15 以上で実行する（.nvmrc は 22.23.3）",
-  );
+  throw new Error("module.registerHooks が無い。.nvmrc の版の Node で実行する");
 }
 const require = nodeModule.createRequire(import.meta.url);
 const TESTS_DIR = path.dirname(fileURLToPath(import.meta.url));
