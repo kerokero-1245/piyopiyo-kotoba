@@ -8,9 +8,11 @@
 // 他アプリ・街のキー（meiro.* sansu.* land.*）は読み書き禁止。書いてよいのは kotoba.* のみ。
 
 import { Platform } from "react-native";
+import { TOTAL_STARS } from "@kerokero-1245/piyo-assets/keys";
 import { CategoryId, MojiMode } from "./types";
 
-const STAR_KEY = "kotoba.totalStars";
+// 値の正本は piyo-assets/keys。街（ランド）が同じ定数を読む
+const STAR_KEY = TOTAL_STARS.kotoba;
 const STAR_RESET_AT_KEY = "kotoba.starsResetAt";
 const CATS_KEY = "kotoba.cats";
 const TTS_KEY = "kotoba.tts";
