@@ -14,7 +14,7 @@ import { WordItem } from "../types";
 import { isClipAvailable, playClip, warmUpClips, cancelClip } from "./clips";
 import { CLIP_URLS } from "./voiceClips";
 import { speak, warmUpSpeech, cancelSpeech, isSpeechAvailable } from "./speech";
-import { duckBgm, unduckBgm } from "./bgm/engine";
+import { duckBgm, unduckBgm } from "@kerokero-1245/piyo-assets/bgm/engine";
 
 // ── BGM ダッキング協調 ────────────────────────────────────────────────
 // ことばは発話頻度が高い（sayWord を出題ごと・タップごとに連発する）。声のたびに

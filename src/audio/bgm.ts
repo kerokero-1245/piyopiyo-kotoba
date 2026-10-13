@@ -1,4 +1,4 @@
-// ぴよぴよことば の BGM 配線（共有BGM基盤 src/audio/bgm/engine.ts を使う）。
+// ぴよぴよことば の BGM 配線（共有BGM基盤 @kerokero-1245/piyo-assets の bgm/engine を使う）。
 // オルゴール風・軽やかな曲 'kotoba'（D メジャーペンタ・92BPM・16小節シームレスループ）を、
 // 最初のユーザー操作（タイトルの「あそぶ」/タイトル読み上げタップ）で流す。
 //
@@ -14,7 +14,7 @@ import {
   setBgmEnabled,
   configureBgm,
   getBgmState,
-} from "./bgm/engine";
+} from "@kerokero-1245/piyo-assets/bgm/engine";
 import { getSharedAudioContext } from "./sounds";
 import { getBgmOn, setBgmOn } from "../settings";
 
