@@ -42,7 +42,7 @@ typecheck（`npm run typecheck`）と Web の書き出しが通ったときだ�
 
 ## BGM（背景曲）について
 
-やさしいオルゴール風の背景曲（曲 `kotoba`・D メジャーペンタ・92BPM・16小節シームレスループ）を控えめな音量で流す。ぴよぴよランド4姉妹アプリ共通の**共有BGM基盤**（`src/audio/bgm/`）を使い、**Web Audio API でその場合成**する手続き生成ループ。音源ファイルは同梱せず、録音物・外部素材は使っていない（**外部送信ゼロ・完全オフライン**）。
+やさしいオルゴール風の背景曲（曲 `kotoba`・D メジャーペンタ・92BPM・16小節シームレスループ）を控えめな音量で流す。ぴよぴよランド4姉妹アプリ共通の**共有BGM基盤**（`src/audio/bgm.ts` → 共有パッケージ [piyo-assets](https://github.com/kerokero-1245/piyo-assets) の `bgm/engine`。`package.json` の git 依存で、タグで固定した版を読む）を使い、**Web Audio API でその場合成**する手続き生成ループ。音源ファイルは同梱せず、録音物・外部素材は使っていない（**外部送信ゼロ・完全オフライン**）。
 
 - **クレジット: BGM: オリジナル（Web Audio生成）**。
 - **初期状態 ON**（控えめ音量）。おとなモードの「BGM ながす/ながさない」で切り替え（保存キー `kotoba.bgm`・`localStorage`）。
@@ -104,8 +104,7 @@ src/
     clips.ts                tier1: 同梱音声クリップ再生（web は Audio 要素、native 無音スタブ）
     voiceClips.ts           同梱クリップの登録表（CLIP_URLS）。VOICEVOX 生成の m4a 84個を登録済み
     speech.ts               tier2: speechSynthesis（web、native は無音スタブ）
-    bgm.ts                  BGM 配線（初期ON・トグル kotoba.bgm・声ダッキング・ctx共有）
-    bgm/                    共有BGM基盤（engine.ts＋songs.ts・Web Audio生成のオルゴール曲）
+    bgm.ts                  BGM 配線の入口（曲=kotoba / 初期ON / トグル kotoba.bgm / 声ダッキング / ctx共有）。エンジンと曲のデータは src/ に置かず、共有パッケージ piyo-assets（`@kerokero-1245/piyo-assets/bgm/engine`）から読む
   components/
     BigButton.tsx           共通の大ボタン
     Belt.tsx                ベルトコンベア（無限スクロール＋タップ＋ぷるぷる）
