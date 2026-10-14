@@ -8,7 +8,7 @@
 // ときは全体をスクロールして全部に届く。並びの順がそのまま Tab の順（まちへ もどる → 題字 → あそぶ → 歯車）になる。
 // おつかいめいろ・ぴよぴよさんすうのタイトルと同じ作り。
 
-import React, { useRef } from "react";
+import React from "react";
 import {
   Pressable,
   ScrollView,
@@ -22,6 +22,7 @@ import {
   SHOW_TOWN,
   TOWN_LINK_HEIGHT,
   TownLink,
+  useLongPress,
 } from "@kerokero-1245/piyo-assets/ui";
 import { colors, font, space } from "../theme";
 import { playSound } from "../audio/sounds";
@@ -33,8 +34,6 @@ interface Props {
   onPlay: () => void;
   onOtona: () => void;
 }
-
-const HOLD_MS = 3000;
 
 // 題字を1行に収める文字の大きさ。題字は枠の左右の余白（space.md）まで使い、画面の端から TITLE_EDGE だけ離す。
 // 1字 = 1em（7字）＋字間 2×7 で見積もる（保守的。ぴよぴよさんすうと同じ係数）。Mac のヒラギノの UI 用書体は
@@ -53,22 +52,9 @@ function titleFontSize(windowW: number): number {
 }
 
 export default function TitleScreen({ onPlay, onOtona }: Props) {
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { width: windowW } = useWindowDimensions();
-
-  const clearHold = () => {
-    if (timer.current) {
-      clearTimeout(timer.current);
-      timer.current = null;
-    }
-  };
-  const startHold = () => {
-    clearHold();
-    timer.current = setTimeout(() => {
-      timer.current = null;
-      onOtona();
-    }, HOLD_MS);
-  };
+  // 歯車の 3 秒長押し（既定の長さ）で おとなモードへ。画面を離れたときは残りのタイマーを止める。
+  const gearHold = useLongPress(onOtona);
 
   // タイトルをタップすると「ぴよぴよことば」を読み上げる（ジェスチャ起点＝自動再生制限を守る）。
   // 最初のタップでもあるので warmUpVoice() で読み上げをアンロックしてから読む。読み上げオフなら黙る。
@@ -140,8 +126,8 @@ export default function TitleScreen({ onPlay, onOtona }: Props) {
         {/* 親ゲート: 3秒長押しでおとなモード（右下。ほかの要素と重ならないよう行として置く） */}
         <View style={styles.gearRow}>
           <Pressable
-            onPressIn={startHold}
-            onPressOut={clearHold}
+            onPressIn={gearHold.onPressIn}
+            onPressOut={gearHold.onPressOut}
             accessibilityRole="button"
             accessibilityLabel="おとなモード（長押し）"
             hitSlop={12}
