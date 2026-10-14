@@ -106,7 +106,7 @@ src/
     voiceClips.ts           同梱クリップの登録表（CLIP_URLS）。VOICEVOX 生成の m4a 84個を登録済み
     speech.ts               tier2: speechSynthesis（web、native は無音スタブ）
     bgm.ts                  BGM 配線の入口（曲=kotoba / 初期ON / トグル kotoba.bgm / 声ダッキング / ctx共有）。エンジンと曲のデータは src/ に置かず、共有パッケージ piyo-assets（`@kerokero-1245/piyo-assets/bgm/engine`）から読む
-  components/               大ボタン・進捗ドット・紙吹雪・街へのリンク・おとなモードの長押しは src/ に置かず、共有パッケージ piyo-assets（`@kerokero-1245/piyo-assets/ui`）から読む（見た目の値は App.tsx の PiyoUiProvider で theme から渡す）
+  components/
     Belt.tsx                ベルトコンベア（無限スクロール＋タップ＋ぷるぷる）
     RevealCard.tsx          正解の ぽんっと拡大＋「◯◯！」
     ClearOverlay.tsx        「きょうの がんばりカード」セット完了の祝福
@@ -116,3 +116,5 @@ src/
     OtonaScreen.tsx         おとなモード（カテゴリ・もじ・読み上げ・BGM・⭐リセット）
 public/                     Web 書き出しの HTML の型・manifest・アイコン・OGP 画像
 ```
+
+大ボタン・進捗ドット・紙吹雪・「まちへ もどる」（街へのリンク）・おとなモードの長押しは src/ に置かず、共有パッケージ piyo-assets の `@kerokero-1245/piyo-assets/ui` から読む（見た目の値は App.tsx の `PiyoUiProvider` で `src/theme.ts` から渡す）。
