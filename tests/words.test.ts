@@ -151,12 +151,12 @@ describe("語データ", () => {
     }
   });
 
-  test("assets/svg の svg は 40 語の分と ki（TownLink の木）だけ", () => {
+  test("assets/svg の svg は 40 語の分だけ", () => {
     const files = readdirSync(path.join(ROOT, "assets/svg"))
       .filter((name) => name.endsWith(".svg"))
       .map((name) => name.slice(0, -".svg".length))
       .sort();
-    assert.deepEqual(files, [...WORDS.map((w) => w.id), "ki"].sort());
+    assert.deepEqual(files, WORDS.map((w) => w.id).sort());
   });
 });
 
