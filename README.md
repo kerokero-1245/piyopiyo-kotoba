@@ -12,7 +12,7 @@
 
 ブラウザで開いてそのまま遊べる。スマホなら「ホーム画面に追加」で全画面起動。`main` に push すると GitHub Actions（[.github/workflows/deploy.yml](.github/workflows/deploy.yml)）が Web を書き出して自動デプロイする。
 
-typecheck（`npm run typecheck`）と Web の書き出しが通ったときだけ公開し、PR でも同じ検査を回す。
+整形の検査（`format:check`）・ESLint（`lint`）・型チェック（`typecheck`）・テスト（`npm test`）が通り、Web の書き出しができたときだけ公開し、PR でも同じ検査を回す。
 
 - 設計（コンセプト・出題ロジック・TTS方針・4歳UX・ロードマップ）: [docs/DESIGN.md](docs/DESIGN.md)
 - 作り方の規則と、この repo で違うこと: [docs/DESIGN.md](docs/DESIGN.md#この-repo-での適用)
@@ -30,7 +30,7 @@ typecheck（`npm run typecheck`）と Web の書き出しが通ったときだ�
 - 罰・タイマー・スコア・ゲームオーバーなし。**失敗状態を作らない**（ベルトはループし続ける）。まちがいはぷるぷる震えるだけ。
 - 既存キャラIPは使わない。MVPは絵文字プレースホルダ。
 - 完全オフライン: バックエンド・アカウント・通信・外部送信なし。TTSも端末内合成。設定・累計⭐は端末内のみ。
-- 技術: Expo SDK 57 (React Native + TypeScript)、Node 22.23.3、アニメは標準 `Animated`、読み上げは `speechSynthesis`。
+- 技術: Expo SDK 57 (React Native + TypeScript)、Node 24.21.0、アニメは標準 `Animated`、読み上げは `speechSynthesis`。
 
 ## TTS（読み上げ）について
 
@@ -53,7 +53,7 @@ typecheck（`npm run typecheck`）と Web の書き出しが通ったときだ�
 
 ## 動かし方
 
-前提: **Node 22.23.3**。nvm なら `nvm use`（`.nvmrc` に 22.23.3）。
+前提: **Node は `.nvmrc` の版**。nvm なら `nvm use`（`.nvmrc` を読む）。
 
 ```sh
 npm install          # 初回のみ
