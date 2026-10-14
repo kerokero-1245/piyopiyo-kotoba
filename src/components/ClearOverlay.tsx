@@ -23,10 +23,10 @@ import {
   View,
   ViewStyle,
 } from "react-native";
+import { Confetti } from "@kerokero-1245/piyo-assets/ui";
 import { colors, font, space } from "../theme";
 import { FRAME_PAD_BOTTOM, FRAME_PAD_TOP } from "../layout";
 import BigButton from "./BigButton";
-import Confetti from "./Confetti";
 import { getShownStars } from "../settings";
 import { playCountTone, playSound } from "../audio/sounds";
 

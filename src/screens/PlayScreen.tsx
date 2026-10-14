@@ -15,6 +15,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { Confetti } from "@kerokero-1245/piyo-assets/ui";
 import { colors, font, radius, space } from "../theme";
 import { generateSet } from "../game/quiz";
 import { displayWord } from "../game/words";
@@ -25,7 +26,6 @@ import { WordItem } from "../types";
 import Belt from "../components/Belt";
 import RevealCard from "../components/RevealCard";
 import ClearOverlay from "../components/ClearOverlay";
-import Confetti from "../components/Confetti";
 import ProgressStar from "../components/ProgressStar";
 
 interface Props {
