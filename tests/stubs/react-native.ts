@@ -1,5 +1,5 @@
-// react-native の代用品（テスト用）。いま読んでいる src が react-native から使うのは Platform.OS だけ
-// （settings.ts と audio/*）。web 前提の値にしてあり、native の経路を確かめるテストはこの OS を
-// 書き換えて、終わったら "web" に戻す。View や Text などの部品は用意していない（画面は読まない）。
-// 読む src が増えたら、必要な名前だけここへ足す。
-export const Platform: { OS: string } = { OS: "web" };
+// react-native の代用品（テスト用）。中身は piyo-assets の既定の差し替え（Platform.OS は "web" から始まる）。
+// いま読んでいる src が react-native から使うのは Platform.OS だけ（settings.ts と audio/*）で、
+// native の経路を確かめるテストはこの OS を書き換えて、終わったら "web" に戻す。
+// このアプリだけが使う名前が要るようになったら、下に足す。
+export * from "@kerokero-1245/piyo-assets/testing/stubs/react-native";

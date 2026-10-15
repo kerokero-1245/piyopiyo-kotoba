@@ -1,6 +1,11 @@
 // テストの共通の道具: repo のルート・種つき乱数・偽の localStorage・settings.ts の読み直し。
 
 import path from "node:path";
+import {
+  FakeStorage as PackageFakeStorage,
+  installLocalStorage as installPackageLocalStorage,
+  installThrowingLocalStorage,
+} from "@kerokero-1245/piyo-assets/testing/storage";
 import type { CategoryId } from "../src/types";
 
 // repo のルート（assets/ を実際に開くのに使う）。
@@ -24,74 +29,38 @@ export function assetPath(value: unknown): string {
 
 // ── 種つき乱数 ───────────────────────────────────────────────
 // quiz.ts は Math.random を直に使う。テスト中だけ種つきの乱数（mulberry32）に差し替えると、
-// 何度回しても同じ出題列になり、失敗したときに同じ種で再現できる。
-export function seededRandom(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let t = state;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-// fn の間だけ Math.random を種つきにする（終わったら必ず元へ戻す）。
-export function withSeed<T>(seed: number, fn: () => T): T {
-  const original = Math.random;
-  Math.random = seededRandom(seed);
-  try {
-    return fn();
-  } finally {
-    Math.random = original;
-  }
-}
+// 何度回しても同じ出題列になり、失敗したときに同じ種で再現できる。中身は piyo-assets の testing/random。
+export {
+  seededRandom,
+  withSeed,
+} from "@kerokero-1245/piyo-assets/testing/random";
 
 // ── 偽の localStorage ────────────────────────────────────────
-// settings.ts が使うのは getItem / setItem / removeItem だけ。どのキーを読み書きしたかを log に残す。
-export interface StorageCall {
-  op: "get" | "set" | "remove";
-  key: string;
-  value?: string;
-}
+// 中身は piyo-assets の testing/storage。ここには、このアプリのテストの書き方に合わせる薄い包みだけを置く:
+//   ・new FakeStorage(initial, { failReads, failWrites }) … 失敗のさせ方をコンストラクタの options で渡す
+//     （failReads → getItem、failWrites → setItem と removeItem）
+//   ・writes() … 書き込み（set / remove）の記録だけ
+//   ・log の要素は key を必ず持つ形（settings.ts は clear を呼ばない）
+//   ・installLocalStorage(descriptor) … { value } か { get }（触るだけで例外）の形の descriptor で置き換える
+type BaseStorageCall = PackageFakeStorage["log"][number];
+export type StorageCall = Exclude<BaseStorageCall, { op: "clear" }>;
 
 export interface FakeStorageOptions {
   failReads?: boolean; // getItem が例外を投げる
   failWrites?: boolean; // setItem / removeItem が例外を投げる
 }
 
-export class FakeStorage {
-  readonly data: Map<string, string>;
-  readonly log: StorageCall[] = [];
+export class FakeStorage extends PackageFakeStorage {
+  declare readonly log: StorageCall[];
 
   constructor(
     initial: Record<string, string> = {},
-    private readonly options: FakeStorageOptions = {},
+    options: FakeStorageOptions = {},
   ) {
-    this.data = new Map(Object.entries(initial));
-  }
-
-  getItem(key: string): string | null {
-    this.log.push({ op: "get", key });
-    if (this.options.failReads) throw new Error("storage: read failed");
-    return this.data.get(key) ?? null;
-  }
-
-  setItem(key: string, value: string): void {
-    this.log.push({ op: "set", key, value });
-    if (this.options.failWrites) throw new Error("storage: write failed");
-    this.data.set(key, value);
-  }
-
-  removeItem(key: string): void {
-    this.log.push({ op: "remove", key });
-    if (this.options.failWrites) throw new Error("storage: remove failed");
-    this.data.delete(key);
-  }
-
-  // 保存されている中身を { キー: 値 } で返す。
-  snapshot(): Record<string, string> {
-    return Object.fromEntries(this.data);
+    super(initial);
+    this.failGet = options.failReads === true;
+    this.failSet = options.failWrites === true;
+    this.failRemove = options.failWrites === true;
   }
 
   // 書き込み（set / remove）の記録だけを取り出す。
@@ -104,15 +73,13 @@ export class FakeStorage {
 export function installLocalStorage(
   descriptor: PropertyDescriptor,
 ): () => void {
-  const previous = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
-  Object.defineProperty(globalThis, "localStorage", {
-    ...descriptor,
-    configurable: true,
-  });
-  return () => {
-    if (previous) Object.defineProperty(globalThis, "localStorage", previous);
-    else Reflect.deleteProperty(globalThis, "localStorage");
-  };
+  if (descriptor.get !== undefined) return installThrowingLocalStorage();
+  if ("value" in descriptor) {
+    return installPackageLocalStorage(
+      descriptor.value as PackageFakeStorage | undefined,
+    );
+  }
+  throw new TypeError("installLocalStorage: { value } か { get } を渡す");
 }
 
 // ── settings.ts の読み直し ───────────────────────────────────
