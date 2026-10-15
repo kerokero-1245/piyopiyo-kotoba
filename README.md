@@ -65,6 +65,7 @@ npm start            # Expo を起動 → ターミナルで w を押すと Web 
 
 ショートカット: `npm run web`。型の確認は `npm run typecheck`（`tsc --noEmit`）。
 テストは `npm test`（Node 標準の `node --test`。`tests/register.mjs` が .ts/.tsx の読み込みと react-native・素材の差し替えを受け持つので、依存は増えない）。
+読み込みの仕組み（.ts の変換・react-native と expo の差し替え）と偽の localStorage・種つき乱数は piyo-assets の `testing/` から読み、tests/register.mjs・tests/stubs/・tests/helpers.ts にはこのアプリの差分だけを書く。
 
 ### Web ビルド（配布用の静的サイト書き出し）
 
@@ -117,4 +118,4 @@ src/
 public/                     Web 書き出しの HTML の型・manifest・アイコン・OGP 画像
 ```
 
-大ボタン・進捗ドット・紙吹雪・「まちへ もどる」（街へのリンク）・おとなモードの長押しは src/ に置かず、共有パッケージ piyo-assets の `@kerokero-1245/piyo-assets/ui` から読む（見た目の値は App.tsx の `PiyoUiProvider` で `src/theme.ts` から渡す）。
+大ボタン・進捗ドット・紙吹雪・「まちへ もどる」（街へのリンク）・おとなモードの長押しは src/ に置かず、共有パッケージ piyo-assets の部品ごとの入口 `@kerokero-1245/piyo-assets/ui/<部品名>`（`ui/BigButton`・`ui/ProgressStar`・`ui/Confetti`・`ui/TownLink`・`ui/useLongPress`）から読む（見た目の値は App.tsx の `PiyoUiProvider`（`ui/tokens`）で `src/theme.ts` から渡す。進捗の⭐は絵文字で出すので、`ui/ProgressStar` の `EMOJI_MARK` を `mark` に渡す）。
