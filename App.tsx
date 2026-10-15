@@ -8,7 +8,7 @@ import { StyleSheet, View } from "react-native";
 import {
   PiyoUiProvider,
   type PiyoUiTokens,
-} from "@kerokero-1245/piyo-assets/ui";
+} from "@kerokero-1245/piyo-assets/ui/tokens";
 import { Route } from "./src/types";
 import { colors, font, radius, space } from "./src/theme";
 import { FRAME_PAD_BOTTOM, FRAME_PAD_TOP } from "./src/layout";

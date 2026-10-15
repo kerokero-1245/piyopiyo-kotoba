@@ -15,7 +15,11 @@ import {
   Text,
   View,
 } from "react-native";
-import { Confetti, ProgressStar } from "@kerokero-1245/piyo-assets/ui";
+import { Confetti } from "@kerokero-1245/piyo-assets/ui/Confetti";
+import {
+  EMOJI_MARK,
+  ProgressStar,
+} from "@kerokero-1245/piyo-assets/ui/ProgressStar";
 import { colors, font, radius, space } from "../theme";
 import { generateSet } from "../game/quiz";
 import { displayWord } from "../game/words";
@@ -176,7 +180,7 @@ export default function PlayScreen({ onHome }: Props) {
             <ProgressStar
               key={i}
               state={i < starsEarned ? "star" : i === index ? "now" : "off"}
-              variant="emoji"
+              mark={EMOJI_MARK}
             />
           ))}
         </View>
